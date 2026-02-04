@@ -200,8 +200,8 @@ add_frontend() {
     log "pulling frontend"
     mkdir -p $script_dir/frontend
     cd $script_dir/frontend
-    curl -L -o react-dist.zip https://github.com/EndeeLabs/endee-web-ui/releases/latest/download/endee-web-ui.zip
-    unzip react-dist.zip
+    curl -L -o react-dist.zip https://github.com/EndeeLabs/endee-web-ui/releases/download/v1.0.2/endee-web-ui.zip
+    unzip -o react-dist.zip
     rm react-dist.zip
     log "frontend added"
 }
@@ -406,6 +406,12 @@ main() {
     build_project
 
     add_frontend
+
+
+    log ""
+    log "Build and installation successful!"
+    log "You can now start the server by running:"
+    log "  ./run.sh"
 }
 
 main "$@"

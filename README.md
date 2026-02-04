@@ -2,9 +2,16 @@
 
 **Endee (nD)** is a specialized, high-performance vector database built for speed and efficiency. This guide covers supported platforms, dependency requirements, and detailed build instructions using both our automated installer and manual CMake configuration.
 
+there are 3 ways to build and run endee:
+1. quick installation and run using install.sh and run.sh scripts
+2. manual build using cmake
+3. using docker
+
+also you can run endee using docker from docker hub without building it locally. refer to section 4 for more details.
+
 ---
 
-## 1. System Requirements
+## System Requirements
 
 Before installing, ensure your system meets the following hardware and operating system requirements.
 
@@ -23,11 +30,16 @@ The following packages are required for compilation.
 
 ---
 
-## 2. Quick Installation (Recommended)
+## 1. Quick Installation (Recommended)
 
 The easiest way to build **ndd** is using the included `install.sh` script. This script handles OS detection, dependency checks, and configuration automatically.
 
 ### Usage
+
+First, ensure the script is executable:
+```bash
+chmod +x ./install.sh
+```
 
 Run the script from the root of the repository. You **must** provide arguments for the build mode and/or CPU optimization.
 
@@ -75,9 +87,67 @@ Select the flag matching your hardware to enable SIMD optimizations.
 ./install.sh --debug_all --neon
 ```
 
----
+### Running the Server
 
-## 3. Manual Build (Advanced)
+We provide a `run.sh` script to simplify running the server. It automatically detects the built binary and uses `ndd_data_dir=./data` by default.
+
+First, ensure the script is executable:
+
+```bash
+chmod +x ./run.sh
+```
+
+Then run the script:
+
+```bash
+./run.sh
+```
+
+This will automatically identify the latest binary and start the server.
+
+#### Options
+
+You can override the defaults using arguments:
+
+*   `ndd_data_dir=DIR`: Set the data directory.
+*   `binary_file=FILE`: Set the binary file to run.
+*   `ndd_auth_token=TOKEN`: Set the authentication token (leave empty/ignore to run without authentication).
+
+#### Examples
+
+**Run with custom data directory:**
+
+```bash
+./run.sh ndd_data_dir=./my_data
+```
+
+**Run specific binary:**
+
+```bash
+./run.sh binary_file=./build/ndd-avx2
+```
+
+**Run with authentication token:**
+
+```bash
+./run.sh ndd_auth_token=your_token
+```
+
+
+**Run with all options**
+
+```bash
+./run.sh ndd_data_dir=./my_data binary_file=./build/ndd-avx2 ndd_auth_token=your_token
+```
+
+**For Help**
+
+```bash
+./run.sh --help
+```
+
+
+## 2. Manual Build (Advanced)
 
 If you prefer to configure the build manually or integrate it into an existing install pipeline, you can use `cmake` directly.
 
@@ -119,9 +189,7 @@ cmake -DCMAKE_BUILD_TYPE=Release \
 make -j$(nproc)
 ```
 
----
-
-## 4. Running ndd
+### Running the Built Binary
 
 After a successful build, the binary will be generated in the `build/` directory.
 
@@ -136,7 +204,7 @@ The output binary name depends on the SIMD flag used during compilation:
 
 ### Runtime Environment Variables
 
-Some enviroment variables **ndd** reads at runtime:
+Some environment variables **ndd** reads at runtime:
 
 * `NDD_DATA_DIR`: Defines the data directory
 * `NDD_AUTH_TOKEN`: Optional authentication token (see below)
@@ -182,7 +250,10 @@ NDD_DATA_DIR=./data ./build/ndd-avx2
 ```
 
 ---
-## 5. Docker Deployment
+
+
+
+## 3. Docker Deployment
 
 We provide a Dockerfile for easy containerization. This ensures a consistent runtime environment and simplifies the deployment process across various platforms.
 
@@ -206,9 +277,12 @@ The container exposes port `8080` and stores data in `/data` inside container. Y
 docker run \
   -p 8080:8080 \
   -v endee-data:/data \
+  -e NDD_AUTH_TOKEN="your_secure_token" \
   --name endee-server \
   endee-oss:latest
 ```
+
+leave `NDD_AUTH_TOKEN` empty or remove it to run endee without authentication.
 
 ### Alternatively: Docker Compose
 
@@ -221,7 +295,7 @@ You can also use `docker-compose` to run the service.
 
 ---
 
-## 6. Running Docker container from registry
+## 4. Running Docker container from registry
 
 You can run Endee directly using the pre-built image from Docker Hub without building locally.
 
