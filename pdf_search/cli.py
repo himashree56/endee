@@ -185,5 +185,211 @@ def interactive():
             console.print(f"[red]Error: {e}[/red]\n")
 
 
+@cli.command()
+@click.argument('question')
+def chat(question):
+    """Ask a question using RAG (Retrieval-Augmented Generation)."""
+    from rag_agent import RAGAgent
+    
+    console.print(f"\n[bold cyan]Question:[/bold cyan] {question}\n")
+    
+    try:
+        agent = RAGAgent()
+        result = agent.ask(question)
+        
+        # Display answer
+        console.print("[bold green]Answer:[/bold green]")
+        console.print(result["answer"])
+        
+        # Display sources
+        if result["sources"]:
+            console.print("\n[bold yellow]Sources:[/bold yellow]")
+            for i, source in enumerate(result["sources"], 1):
+                console.print(f"  {i}. {source}")
+        
+        console.print()
+        
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+
+
+@cli.command(name='interactive-chat')
+def interactive_chat():
+    """Start interactive RAG chat mode."""
+    from rag_agent import RAGAgent
+    
+    console.print("\n[bold cyan]PDF RAG Chat - Interactive Mode[/bold cyan]")
+    console.print("Ask questions about your documents. Type 'quit' to exit\n")
+    
+    agent = RAGAgent()
+    
+    while True:
+        try:
+            question = console.input("[bold green]You:[/bold green] ")
+            
+            if question.lower() in ['quit', 'exit', 'q']:
+                console.print("\n[yellow]Goodbye![/yellow]\n")
+                break
+            
+            if not question.strip():
+                continue
+            
+            console.print()
+            result = agent.ask(question)
+            
+            # Display answer
+            console.print("[bold cyan]Assistant:[/bold cyan]")
+            console.print(result["answer"])
+            
+            # Display sources (compact)
+            if result["sources"]:
+                sources_str = ", ".join(result["sources"][:3])
+                if len(result["sources"]) > 3:
+                    sources_str += f" (+{len(result["sources"]) - 3} more)"
+                console.print(f"\n[dim]Sources: {sources_str}[/dim]")
+            
+            console.print()
+            
+        except KeyboardInterrupt:
+            console.print("\n\n[yellow]Goodbye![/yellow]\n")
+            break
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/red]\n")
+
+
+@cli.command()
+@click.option('--file', help='Specific document to summarize')
+@click.option('--length', type=click.Choice(['short', 'medium', 'long']), default='medium', help='Summary length')
+@click.option('--all', 'summarize_all', is_flag=True, help='Summarize all documents')
+def summarize(file, length, summarize_all):
+    """Summarize documents from the vector database."""
+    from summarizer import DocumentSummarizer
+    
+    summarizer = DocumentSummarizer()
+    
+    if summarize_all:
+        # Summarize all documents
+        console.print("\n[bold cyan]Summarizing all documents...[/bold cyan]\n")
+        summaries = summarizer.summarize_all_documents(max_length=length)
+        
+        if not summaries:
+            console.print("[yellow]No documents found in the database[/yellow]\n")
+            return
+        
+        for i, result in enumerate(summaries, 1):
+            console.print(f"[bold green]{i}. {result['filename']}[/bold green]")
+            console.print(f"   Chunks: {result['chunk_count']}, Pages: {result['page_count']}")
+            console.print(f"\n{result['summary']}\n")
+            console.print("-" * 80 + "\n")
+    
+    elif file:
+        # Summarize specific document
+        console.print(f"\n[bold cyan]Summarizing: {file}[/bold cyan]\n")
+        result = summarizer.summarize_document(file, max_length=length)
+        
+        if "error" in result:
+            console.print(f"[red]{result['summary']}[/red]\n")
+            return
+        
+        console.print(f"[bold]Document:[/bold] {result['filename']}")
+        console.print(f"[bold]Chunks:[/bold] {result['chunk_count']}")
+        console.print(f"[bold]Pages:[/bold] {result['page_count']}\n")
+        console.print("[bold green]Summary:[/bold green]")
+        console.print(result['summary'])
+        console.print()
+    
+    else:
+        console.print("[yellow]Please specify --file or --all[/yellow]")
+        console.print("Example: python cli.py summarize --file document.pdf")
+        console.print("         python cli.py summarize --all --length short")
+
+
+@cli.command(name='list-documents')
+def list_documents():
+    """List all documents available in the vector database."""
+    from summarizer import DocumentSummarizer
+    
+    summarizer = DocumentSummarizer()
+    documents = summarizer.get_available_documents()
+    
+    if not documents:
+        console.print("\n[yellow]No documents found in the database[/yellow]\n")
+        return
+    
+    console.print("\n[bold cyan]Available Documents:[/bold cyan]\n")
+    
+    # Get index info for details
+    index_info = summarizer.search_engine.get_index_info()
+    files = index_info.get("files", {})
+    
+    for i, doc in enumerate(documents, 1):
+        file_info = files.get(doc, {})
+        chunks = file_info.get("chunks", 0)
+        pages = len(file_info.get("pages", []))
+        
+        console.print(f"{i}. [bold]{doc}[/bold]")
+        console.print(f"   Chunks: {chunks}, Pages: {pages}")
+    
+    console.print()
+
+
+@cli.command(name='adaptive-rag')
+@click.argument('question')
+def adaptive_rag(question):
+    """Ask a question using Adaptive Reasoning RAG with explainability."""
+    from adaptive_rag_agent import AdaptiveRAGAgent
+    import json
+    
+    console.print(f"\n[bold cyan]Question:[/bold cyan] {question}\n")
+    console.print("[dim]Running adaptive reasoning...[/dim]\n")
+    
+    try:
+        agent = AdaptiveRAGAgent()
+        result = agent.ask(question)
+        
+        # Display query analysis
+        console.print("[bold yellow]📊 Query Analysis:[/bold yellow]")
+        analysis = result["query_analysis"]
+        console.print(f"  Complexity: {analysis.get('complexity', 'N/A')}")
+        console.print(f"  Type: {analysis.get('query_type', 'N/A')}")
+        console.print()
+        
+        # Display reasoning steps
+        console.print("[bold yellow]🧠 Reasoning Steps:[/bold yellow]")
+        for step in result["reasoning_steps"]:
+            console.print(f"  • {step['step']}: {step['details']}")
+        console.print()
+        
+        # Display answer
+        console.print("[bold green]💡 Answer:[/bold green]")
+        console.print(result["answer"])
+        console.print()
+        
+        # Display confidence
+        confidence = result["confidence"]
+        confidence_color = "green" if confidence > 0.7 else "yellow" if confidence > 0.4 else "red"
+        console.print(f"[bold {confidence_color}]🎯 Confidence: {confidence:.1%}[/bold {confidence_color}]")
+        console.print()
+        
+        # Display sources
+        if result["sources"]:
+            console.print("[bold yellow]📚 Sources:[/bold yellow]")
+            for i, source in enumerate(result["sources"], 1):
+                console.print(f"  {i}. {source}")
+        console.print()
+        
+        # Display retrieval iterations
+        if len(result["retrieval_iterations"]) > 1:
+            console.print("[bold yellow]🔄 Retrieval Iterations:[/bold yellow]")
+            for iteration in result["retrieval_iterations"]:
+                console.print(f"  Iteration {iteration['iteration']}: {iteration['num_results']} docs (avg score: {iteration['avg_score']:.3f})")
+            console.print()
+        
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        import traceback
+        traceback.print_exc()
+
+
 if __name__ == '__main__':
     cli()

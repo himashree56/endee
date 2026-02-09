@@ -10,9 +10,12 @@ class Config:
     """Application configuration."""
     
     # Endee Server
-    ENDEE_HOST = os.getenv("ENDEE_HOST", "localhost")
-    ENDEE_PORT = int(os.getenv("ENDEE_PORT", "8080"))
-    ENDEE_URL = f"http://{ENDEE_HOST}:{ENDEE_PORT}"
+    # Use ENDEE_URL if provided, otherwise construct from HOST and PORT
+    ENDEE_URL = os.getenv("ENDEE_URL")
+    if not ENDEE_URL:
+        ENDEE_HOST = os.getenv("ENDEE_HOST", "localhost")
+        ENDEE_PORT = int(os.getenv("ENDEE_PORT", "8080"))
+        ENDEE_URL = f"http://{ENDEE_HOST}:{ENDEE_PORT}"
     
     # Embedding Model
     EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")

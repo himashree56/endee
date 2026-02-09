@@ -1,278 +1,302 @@
-# PDF Semantic Search Engine
+# PDF Search - Adaptive RAG System
 
-A production-ready semantic search engine for PDF documents powered by **Endee Vector Database** and **Sentence Transformers**.
+An intelligent PDF search and analysis system with adaptive reasoning, explainability, and a modern web interface.
 
-## Features
+## 🌟 Features
 
-✨ **Semantic Search** - Find relevant content based on meaning, not just keywords  
-📄 **PDF Processing** - Automatic text extraction and intelligent chunking  
-🚀 **Fast & Scalable** - Powered by Endee vector database  
-🎯 **High Accuracy** - Uses state-of-the-art sentence-transformers embeddings  
-💻 **Rich CLI** - Beautiful command-line interface with interactive mode  
-🔍 **Metadata Filtering** - Filter results by file, page, or custom metadata  
+### Core Capabilities
+- **🔍 Semantic Search** - Vector-based document retrieval using Endee Vector DB
+- **💬 RAG Chat** - Conversational Q&A with source citations
+- **📄 Document Summarization** - AI-powered document summaries (short/medium/long)
+- **🧠 Adaptive Reasoning RAG** - Multi-step reasoning with self-reflection and explainability
+- **📤 PDF Upload** - Upload and index new documents through the web interface
 
-## Architecture
+### Advanced Features
+- **Query Analysis** - Automatic detection of query complexity and intent
+- **Iterative Retrieval** - Self-reflection and query refinement for better results
+- **Confidence Scoring** - Reliability assessment for every answer
+- **Full Explainability** - Complete visibility into the reasoning process
+- **🎨 Dynamic Theming** - Support for Light, Dark, and high-contrast Neon themes
+- **📜 Research History** - Persistent interaction history with topic extraction and export
+- **🧹 Deep Reset** - Synced clearing of interactions and research context
+- **Multi-Mode Interface** - CLI and modern web UI
+
+## 🏗️ Architecture
 
 ```
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│   PDF Files │────▶│ PDF Processor│────▶│   Chunks    │
-└─────────────┘     └──────────────┘     └─────────────┘
-                                                │
-                                                ▼
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│   Search    │◀────│    Endee     │◀────│  Embedder   │
-│   Results   │     │   Database   │     │ (SentTrans) │
-└─────────────┘     └──────────────┘     └─────────────┘
+User Query → Adaptive RAG Agent → Query Analyzer
+                ↓
+        Iterative Retriever → Endee Vector DB
+                ↓
+        Self-Reflector → Answer Generator
+                ↓
+        Confidence Scorer → Explainability
 ```
 
-## Prerequisites
+## 🚀 Quick Start
 
-1. **Endee Server** running (default: `localhost:50051`)
-2. **Python 3.8+**
+### Prerequisites
+- Python 3.8+
+- Node.js 16+ (for web UI)
+- Endee Vector Database (hosted on Render.com)
 
-## Installation
+### Installation
 
-### 1. Install Dependencies
-
+1. **Clone and setup Python environment**
 ```bash
 cd pdf_search
+python -m venv venv
+venv\Scripts\Activate.ps1  # Windows
+# or: source venv/bin/activate  # Linux/Mac
+
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment
-
-Copy `.env.example` to `.env` and configure:
-
+2. **Configure environment**
 ```bash
+# Copy and edit .env file
 cp .env.example .env
+# Add your OpenRouter API key
 ```
 
-Edit `.env`:
-```env
-ENDEE_HOST=localhost
-ENDEE_PORT=50051
-EMBEDDING_MODEL=all-MiniLM-L6-v2
-EMBEDDING_DIM=384
-CHUNK_SIZE=500
-CHUNK_OVERLAP=50
+3. **Install frontend dependencies**
+```bash
+cd frontend
+npm install
 ```
 
-### 3. Add PDF Files
+### Running the Application
 
-Place your PDF files in the `pdfs/` directory (created automatically).
+#### Option 1: Web UI (Recommended)
 
-## Usage
+**Start Backend:**
+```bash
+# From pdf_search directory
+cd backend
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
-### Command-Line Interface
+# Or use the startup script (Windows)
+backend\start.bat
+```
+Backend runs on: `http://localhost:8000`
+API docs: `http://localhost:8000/docs`
 
-#### 1. Ingest PDFs
+**Start Frontend:**
+```bash
+cd frontend
+npm run dev
+# Runs on http://localhost:3000
+```
+
+**Access:** Open `http://localhost:3000` in your browser
+
+#### Option 2: CLI
 
 ```bash
-python cli.py ingest
-```
-
-Or specify a custom directory:
-```bash
-python cli.py ingest --pdf-dir /path/to/pdfs
-```
-
-#### 2. Search
-
-```bash
-python cli.py search "your search query"
-```
-
-Options:
-```bash
-# Get top 10 results
-python cli.py search "machine learning" --top-k 10
-
-# Filter by specific file
-python cli.py search "neural networks" --file "research_paper.pdf"
-```
-
-#### 3. Interactive Mode
-
-```bash
-python cli.py interactive
-```
-
-Start an interactive search session where you can run multiple queries.
-
-#### 4. View Index Info
-
-```bash
-python cli.py info
-```
-
-Shows statistics about indexed documents.
-
-#### 5. Reset Index
-
-```bash
-python cli.py reset
-```
-
-Deletes all indexed data (requires confirmation).
-
-### Python API
-
-```python
-from search_engine import SemanticSearchEngine
-from pathlib import Path
-
-# Initialize
-engine = SemanticSearchEngine()
-engine.initialize()
-
 # Ingest PDFs
-engine.ingest_pdfs(Path("./pdfs"))
+python cli.py ingest
 
-# Search
-results = engine.search("machine learning algorithms", top_k=5)
+# Semantic search
+python cli.py search "your query"
 
-for result in results:
-    print(f"Score: {result['score']:.4f}")
-    print(f"File: {result['metadata']['file_name']}")
-    print(f"Page: {result['metadata']['page']}")
-    print(f"Text: {result['metadata']['text'][:200]}...")
-    print("-" * 80)
+# RAG chat
+python cli.py chat "your question"
+
+# Adaptive RAG with explainability
+python cli.py adaptive-rag "complex question"
+
+# Summarize document
+python cli.py summarize --file "document.pdf" --length medium
+
+# List documents
+python cli.py list-documents
 ```
 
-## Configuration
+## 📚 Usage Examples
 
-### Embedding Models
+### Web UI
 
-You can use different sentence-transformer models:
+1. **Upload PDFs** - Click "📤 Upload" tab, select PDF, and upload
+2. **Search** - Use "🔍 Search" for quick document retrieval
+3. **Chat** - Use "💬 Chat" for Q&A with citations
+4. **Adaptive RAG** - Use "🧠 Adaptive RAG" for complex queries with full reasoning visibility
+5. **Summarize** - Use "📄 Summarize" to generate document summaries
 
-- `all-MiniLM-L6-v2` (default) - Fast, 384 dimensions
-- `all-mpnet-base-v2` - Higher quality, 768 dimensions
-- `multi-qa-mpnet-base-dot-v1` - Optimized for Q&A
+### CLI Examples
 
-Update `EMBEDDING_MODEL` in `.env` to change models.
+```bash
+# Simple search
+python cli.py search "machine learning"
 
-### Chunking Strategy
+# Ask a question
+python cli.py chat "What is agentic AI?"
 
-Adjust chunking parameters in `.env`:
+# Complex query with reasoning
+python cli.py adaptive-rag "What are the main challenges in building agentic AI systems and how do they compare to traditional AI approaches?"
 
-- `CHUNK_SIZE` - Characters per chunk (default: 500)
-- `CHUNK_OVERLAP` - Overlapping characters (default: 50)
+# Summarize a document
+python cli.py summarize --file "research_paper.pdf" --length long
 
-Larger chunks preserve more context but may reduce precision.
+# Interactive modes
+python cli.py interactive        # Interactive search
+python cli.py interactive-chat   # Interactive Q&A
+```
 
-## Project Structure
+## 🎨 Web UI Features
+
+### Multi-Mode Interface
+- **Search** - Direct semantic search with relevance scores
+- **Chat** - Conversational Q&A with source citations
+- **Summarize** - Document summarization with length options
+- **Adaptive RAG** - Advanced reasoning with explainability
+- **Upload** - PDF upload and automatic indexing
+
+### Explainability Visualization
+The Adaptive RAG interface shows:
+- **Query Analysis** - Complexity and type detection
+- **Reasoning Steps** - Step-by-step process timeline
+- **Confidence Meter** - Visual reliability indicator
+- **Sources** - All cited documents with page numbers
+- **Retrieval Iterations** - Query refinement process
+
+### Research History & Context
+- **Interaction History** - Access previous Q&A and reasoning steps
+- **Topic Extraction** - Automatically identifies key research topics
+- **Management** - Rename, delete, or clear history
+- **Context Persistence** - History is saved locally and survives browser restarts
+- **Synced Reset** - Clearing history also purges research context and topics
+
+### Theme System
+- **Light** - Clean, high-visibility professional mode
+- **Dark** - Modern, eye-strain reducing night mode
+- **Neon** - High-contrast, vibrant cyberpunk aesthetic for deep research sessions
+
+## 🔧 API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/search` | POST | Semantic search |
+| `/api/chat` | POST | RAG Q&A |
+| `/api/summarize` | POST | Document summarization |
+| `/api/adaptive-rag` | POST | Adaptive reasoning RAG |
+| `/api/upload` | POST | Upload & index PDF |
+| `/api/documents` | GET | List indexed documents |
+| `/health` | GET | Health check |
+
+## 📁 Project Structure
 
 ```
 pdf_search/
-├── cli.py                  # Command-line interface
-├── config.py              # Configuration management
-├── embedder.py            # Embedding generation
-├── endee_client.py        # Endee database client
-├── pdf_processor.py       # PDF text extraction
-├── search_engine.py       # Main search engine
-├── requirements.txt       # Python dependencies
-├── .env.example          # Environment template
-├── README.md             # This file
-├── pdfs/                 # PDF files (auto-created)
-└── index/                # Index metadata (auto-created)
+├── backend/
+│   └── main.py              # FastAPI server
+├── frontend/
+│   ├── src/
+│   │   ├── components/      # React components
+│   │   ├── App.jsx          # Main app
+│   │   └── main.jsx         # Entry point
+│   ├── package.json
+│   └── vite.config.js
+├── adaptive_rag_agent.py    # Adaptive RAG with LangGraph
+├── rag_agent.py             # Simple RAG agent
+├── summarizer.py            # Document summarizer
+├── search_engine.py         # Semantic search engine
+├── endee_client.py          # Endee DB client
+├── memory_manager.py        # Local history and context management
+├── embedder.py              # Embedding generation
+├── pdf_processor.py         # PDF text extraction
+├── cli.py                   # Command-line interface
+├── user_memory.json         # Local storage for research history
+└── requirements.txt         # Python dependencies
 ```
 
-## How It Works
+## 🛠️ Technology Stack
 
-### 1. PDF Ingestion Pipeline
+- **Vector Database**: Endee (hosted on Render.com)
+- **Embeddings**: sentence-transformers (`all-MiniLM-L6-v2`)
+- **LLM**: OpenRouter API (`gpt-4o-mini`)
+- **Orchestration**: LangGraph
+- **Backend**: FastAPI
+- **Frontend**: React + Vite
+- **CLI**: Click + Rich
 
-1. **Extract Text** - PyMuPDF extracts text from each PDF page
-2. **Chunk Text** - Text is split into overlapping chunks (preserves context)
-3. **Generate Embeddings** - Sentence-transformers creates vector embeddings
-4. **Store in Endee** - Vectors and metadata stored in Endee database
+## ⚙️ Configuration
 
-### 2. Search Process
+Edit `.env` file:
 
-1. **Query Embedding** - User query converted to vector
-2. **Vector Search** - Endee finds most similar vectors (cosine similarity)
-3. **Rank Results** - Results ranked by similarity score
-4. **Return Metadata** - Original text and metadata returned
+```env
+# Endee Vector Database
+ENDEE_URL=https://endee-1.onrender.com
 
-## Performance Tips
-
-1. **Batch Processing** - Embeddings generated in batches for efficiency
-2. **GPU Acceleration** - Sentence-transformers uses GPU if available
-3. **Chunking** - Optimal chunk size balances context vs. precision
-4. **Model Selection** - Smaller models are faster, larger models more accurate
-
-## Troubleshooting
-
-### Endee Connection Failed
-
-```bash
-# Check if Endee is running
-curl http://localhost:50051/health
-
-# Update ENDEE_HOST and ENDEE_PORT in .env
-```
-
-### Out of Memory
-
-```bash
-# Use smaller embedding model
+# Embedding Model
 EMBEDDING_MODEL=all-MiniLM-L6-v2
+EMBEDDING_DIM=384
 
-# Reduce batch size in embedder.py
+# PDF Processing
+CHUNK_SIZE=500
+CHUNK_OVERLAP=50
+
+# LLM (OpenRouter)
+OPENROUTER_API_KEY=your-api-key-here
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+LLM_MODEL=openai/gpt-4o-mini
 ```
 
-### No Results Found
+## 🧪 Testing
 
 ```bash
-# Check if PDFs were ingested
-python cli.py info
+# Test backend
+python backend\main.py
+# Visit http://localhost:8000/docs for API documentation
 
-# Re-ingest if needed
-python cli.py reset
-python cli.py ingest
+# Test CLI
+python cli.py adaptive-rag "test question"
+
+# Test frontend
+cd frontend
+npm run dev
 ```
 
-## Advanced Usage
+## 📖 Documentation
 
-### Custom Metadata Filters
+- **Walkthrough**: See `walkthrough.md` in artifacts for detailed implementation guide
+- **API Docs**: Visit `http://localhost:8000/docs` when backend is running
+- **CLI Help**: Run `python cli.py --help`
 
-```python
-# Search only in specific file
-results = engine.search(
-    "query",
-    filter_by_file="document.pdf"
-)
-```
+## 🎯 Key Features Explained
 
-### Programmatic Access
+### Adaptive Reasoning RAG
+Unlike traditional RAG systems, our adaptive RAG:
+1. **Analyzes** query complexity before retrieval
+2. **Retrieves** documents adaptively based on complexity
+3. **Reflects** on whether retrieved docs answer the question
+4. **Refines** the query and re-retrieves if needed
+5. **Generates** answer with multi-step reasoning
+6. **Scores** confidence based on multiple factors
+7. **Explains** every step of the process
 
-```python
-from endee_client import EndeeClient
-from embedder import Embedder
+### Explainability
+Every adaptive RAG query provides:
+- Query analysis (complexity, type, entities)
+- Reasoning steps with timestamps
+- Retrieval iterations and scores
+- Confidence breakdown
+- Source quality assessment
 
-# Direct Endee access
-client = EndeeClient()
-embedder = Embedder()
+## 🤝 Contributing
 
-# Custom search
-query_vec = embedder.embed_text("custom query")
-results = client.search(query_vec, top_k=10)
-```
+This is a demonstration project showcasing adaptive RAG with explainability.
 
-## License
+## 📄 License
 
-MIT License - See LICENSE file for details
+MIT License
 
-## Contributing
+## 🙏 Acknowledgments
 
-Contributions welcome! Please open an issue or PR.
-
-## Support
-
-For issues or questions:
-- Check existing issues
-- Review Endee documentation
-- Open a new issue with details
+- **Endee Vector DB** - High-performance vector database
+- **OpenRouter** - LLM API access
+- **LangGraph** - Agent orchestration framework
+- **sentence-transformers** - Embedding models
 
 ---
 
-**Built with ❤️ using Endee Vector Database**
+**Built with ❤️ using Adaptive Reasoning RAG**

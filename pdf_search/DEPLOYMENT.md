@@ -1,58 +1,71 @@
-# Deployment Guide: Split Hosting (Recommended)
+# Deployment Guide: Hybrid Cloud (Recommended)
 
-This guide splits the application into two parts for easier deployment:
-1.  **Frontend (React)**: Hosted on **Vercel**.
-2.  **Backend (Python API)**: Hosted on **Railway** (or PythonAnywhere).
+This guide outlines the steps to deploy the AI Research Assistant using a hybrid architecture for maximum performance, scalability, and cost-efficiency.
 
-## Prerequisites
-- **Endee Server**: Running on your Mac.
-- **Localtunnel**: Running on your Mac to expose Endee (`npx localtunnel --port 8080`).
-- **GitHub**: You must have this code pushed to GitHub.
-
----
-
-## Part 1: Deploy Backend (Railway)
-
-1.  **Sign up/Login** to [Railway.app](https://railway.app/).
-2.  **New Project** > **Deploy from GitHub repo**.
-3.  Select this repository.
-4.  Railway will auto-detect the `requirements.txt` and `Procfile`.
-5.  **Variables**: Go to the **Settings/Variables** tab for the new service and add:
-    - `ENDEE_HOST`: `<your-localtunnel-url>` (e.g., `calm-zebra-45.loca.lt`) - *Remove https://*
-    - `ENDEE_PORT`: `80` (or `443` if usage HTTPS)
-    - `PORT`: `8000` (Railway provides this automatically usually, but good to be safe)
-6.  **Public Networking**: Go to **Settings** > **Networking** and Generate a Domain.
-    - Copy this URL (e.g., `web-production-1234.up.railway.app`). **This is your BACKEND_URL.**
+## 🏗️ Architecture
+```mermaid
+graph TD
+    User[User Browser] -->|Visit URL| Vercel[Frontend (Vercel)]
+    Vercel -->|API Calls (fetch)| API[Python API (Render)]
+    API -->|Vectors| DB[Endee DB (Render)]
+```
 
 ---
 
-## Part 2: Deploy Frontend (Vercel)
+## Part 1: Deploy Endee DB (Render)
+The database serves as the high-performance vector heart of the system.
 
-1.  **Sign up/Login** to [Vercel.com](https://vercel.com/).
-2.  **Add New Framework Project**.
-3.  Import from **GitHub**.
-4.  **ROOT DIRECTORY**:
-    - **CRITICAL**: Click "Edit" next to Root Directory and select `pdf_search/frontend`.
+1.  Create a new **Web Service** on [Render](https://render.com).
+2.  Connect your repository and set the **Root Directory** to the base project folder (where `CMakeLists.txt` and the top-level `Dockerfile` reside).
+3.  **Runtime**: `Docker`.
+4.  **Plan**: `Free` (or Starter for persistent disk).
 5.  **Environment Variables**:
-    - Add `VITE_API_URL`: Paste your **BACKEND_URL** (e.g., `https://web-production-1234.up.railway.app`).
-6.  **Deploy**.
+    - `PORT`: `8080` (Internal port for Endee).
+6.  Once deployed, copy the **Service URL** (e.g., `https://endee-db.onrender.com`).
 
 ---
 
-## Part 3: Verify
+## Part 2: Deploy Python API (Render)
+The API handles document processing, summarization, and retrieval logic.
 
-1.  Open your Vercel App URL.
-2.  It should load the UI.
-3.  The UI will try to talk to `VITE_API_URL` (Railway).
-4.  Railway will talk to `ENDEE_HOST` (Your Mac via Localtunnel).
+1.  Create another **Web Service** on Render.
+2.  **Name**: `pdf-search-api`.
+3.  **Root Directory**: `pdf_search`.
+4.  **Runtime**: `Docker`.
+5.  **Environment Variables**:
+    - `ENDEE_URL`: Paste the Service URL from Part 1.
+    - `OPENROUTER_API_KEY`: Your OpenRouter key.
+    - `PORT`: `8000`.
+6.  Copy the **API URL** (e.g., `https://pdf-search-api.onrender.com`).
 
 ---
 
-## Local Development (Optional)
+## Part 3: Deploy Frontend (Vercel)
+Vercel provides a global CDN for a blazing-fast user interface.
 
-To run locally with this new setup:
-1.  **Backend**: `uvicorn api:app --reload`
-2.  **Frontend**:
-    - Create a `.env` file in `frontend/`.
-    - Add `VITE_API_URL=http://localhost:8000`
-    - Run `npm run dev`.
+1.  Connect your repo to [Vercel](https://vercel.com).
+2.  **Framework Preset**: `Vite`.
+3.  **Root Directory**: `pdf_search/frontend`.
+4.  **Environment Variables**:
+    - `VITE_API_URL`: Paste the **API URL** from Part 2.
+5.  **Deploy**.
+
+---
+
+## 🔧 Environment Variable Checklist
+
+| Key | Value | Location |
+| :--- | :--- | :--- |
+| `ENDEE_URL` | Endee Service URL | Render (API) |
+| `OPENROUTER_API_KEY` | your_key_here | Render (API) |
+| `VITE_API_URL` | Python API URL | Vercel (Frontend) |
+
+---
+
+## Why this is better?
+- **Blazing Fast UI**: Vercel's Edge Network serves the React app with minimal latency.
+- **Independent Scaling**: Scale the database and the compute-heavy API separately.
+- **Improved Reliability**: A crash in the API layer won't take down the entire user interface.
+
+> [!TIP]
+> **Pro Tip**: Use Render's "Blueprints" (`render.yaml`) to automate the backend deployment.

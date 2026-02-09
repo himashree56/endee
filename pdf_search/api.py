@@ -1,20 +1,25 @@
-
-from fastapi import FastAPI, HTTPException, Query, UploadFile, File
+"""Unified Production API for PDF Search with Adaptive RAG and Research History."""
+from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from pathlib import Path
+import os
+import traceback
 import uvicorn
-import json
 
+# Core logic imports
 from search_engine import SemanticSearchEngine
+from rag_agent import RAGAgent
+from summarizer import DocumentSummarizer
+from adaptive_rag_agent import AdaptiveRAGAgent
+from memory_manager import MemoryManager
 from config import Config
 
+app = FastAPI(title="EndeeNova PDF Search API", version="1.1.0")
 
-app = FastAPI(title="PDF Semantic Search API")
-
-# Enable CORS for development
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,112 +28,245 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize Search Engine
-engine = SemanticSearchEngine()
+# Initialize engines
+search_engine = SemanticSearchEngine()
+adaptive_rag_agent = None
+summarizer = None
 
-class SearchQuery(BaseModel):
+# --- Models ---
+class SearchRequest(BaseModel):
     query: str
     top_k: int = 5
     file_filter: Optional[str] = None
 
-class SearchResult(BaseModel):
-    id: str
+class ChatRequest(BaseModel):
+    question: str
+    history: List[Dict[str, str]] = []
+
+class SummarizeRequest(BaseModel):
+    filename: Optional[str] = None
+    summarize_all: bool = False
+    length: str = "medium"
+
+class AdaptiveRAGRequest(BaseModel):
+    question: str
+    mode: str = "standard"
+
+class RenameRequest(BaseModel):
+    title: str
+
+class SearchResultModel(BaseModel):
+    text: str
+    file_name: str
+    page: Any
     score: float
-    metadata: Dict[str, Any]
+
+# --- Endpoints ---
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok", "engine_initialized": True}
+    return {"status": "healthy", "version": "1.1.0"}
 
 @app.get("/api/info")
 def get_info():
-    info = engine.get_index_info()
-    if not info:
-        return {"total_chunks": 0, "files": {}, "message": "No index found"}
-    return info
+    info = search_engine.get_index_info()
+    return info or {"total_chunks": 0, "files": {}, "message": "No index found"}
 
-@app.post("/api/search", response_model=List[SearchResult])
-def search(query: SearchQuery):
+@app.post("/api/search")
+def search(request: SearchRequest):
     try:
-        results = engine.search(
-            query=query.query,
-            top_k=query.top_k,
-            filter_by_file=query.file_filter
+        results = search_engine.search(
+            query=request.query,
+            top_k=request.top_k,
+            filter_by_file=request.file_filter
         )
-        return results
+        
+        formatted = []
+        for r in results:
+            meta = r.get("metadata", {})
+            formatted.append({
+                "text": meta.get("text", ""),
+                "file_name": meta.get("file_name", "Unknown"),
+                "page": meta.get("page", "?"),
+                "score": r.get("score", 0.0)
+            })
+            
+        return {
+            "success": True,
+            "query": request.query,
+            "num_results": len(formatted),
+            "results": formatted
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/chat")
+def chat(request: ChatRequest):
+    global adaptive_rag_agent
+    try:
+        if adaptive_rag_agent is None:
+            adaptive_rag_agent = AdaptiveRAGAgent()
+        
+        result = adaptive_rag_agent.ask(
+            question=request.question,
+            mode="standard",
+            chat_history=request.history
+        )
+        return {
+            "success": True,
+            "question": request.question,
+            "answer": result["answer"],
+            "sources": result["sources"]
+        }
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/adaptive-rag")
+def adaptive_rag(request: AdaptiveRAGRequest):
+    global adaptive_rag_agent
+    try:
+        if adaptive_rag_agent is None:
+            adaptive_rag_agent = AdaptiveRAGAgent()
+        
+        result = adaptive_rag_agent.ask(request.question, mode=request.mode)
+        return {
+            "success": True,
+            "question": result["question"],
+            "answer": result["answer"],
+            "confidence": result["confidence"],
+            "reasoning_steps": result["reasoning_steps"],
+            "sources": result["sources"],
+            "query_analysis": result["query_analysis"],
+            "retrieval_iterations": result["retrieval_iterations"],
+            "num_documents": result["num_documents"],
+            "truth_label": result.get("truth_label"),
+            "reliability_score": result.get("reliability_score"),
+            "critique_report": result.get("critique_report")
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/summarize")
+def summarize(request: SummarizeRequest):
+    global summarizer
+    try:
+        if summarizer is None:
+            summarizer = DocumentSummarizer()
+        
+        if request.summarize_all:
+            summaries = summarizer.summarize_all_documents(max_length=request.length)
+            return {"success": True, "summaries": summaries}
+        elif request.filename:
+            summary = summarizer.summarize_document(request.filename, max_length=request.length)
+            return {"success": True, "summary": summary}
+        else:
+            raise HTTPException(status_code=400, detail="Must specify filename or summarize_all")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/documents")
+def list_documents():
+    try:
+        docs = search_engine.get_available_documents()
+        index_info = search_engine.get_index_info()
+        files = index_info.get("files", {})
+        
+        doc_list = []
+        for doc in docs:
+            finfo = files.get(doc, {})
+            doc_list.append({
+                "filename": doc,
+                "chunks": finfo.get("chunks", 0),
+                "pages": len(finfo.get("pages", []))
+            })
+        return {"success": True, "documents": doc_list, "total": len(doc_list)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/upload")
-async def upload_files(files: List[UploadFile] = File(...)):
+async def upload_files(files: List[UploadFile] = File(...), background_tasks: BackgroundTasks = None):
     try:
         if not Config.PDF_DIR.exists():
             Config.PDF_DIR.mkdir(parents=True)
             
-        print(f"DEBUG: Received {len(files)} files for upload")
-        saved_files = []
+        uploaded_names = []
+        valid_paths = []
         for file in files:
-            print(f"DEBUG: Processing file: {file.filename}")
+            if not file.filename.endswith('.pdf'):
+                continue
             file_path = Config.PDF_DIR / file.filename
             with open(file_path, "wb") as buffer:
                 content = await file.read()
-                print(f"DEBUG: Read {len(content)} bytes from {file.filename}")
                 buffer.write(content)
-            saved_files.append(file_path)
+            uploaded_names.append(file.filename)
+            valid_paths.append(file_path)
             
-        # Trigger ingestion only for the newly uploaded files
-        print("DEBUG: Initializing engine for ingestion")
-        engine.initialize()
-        process_success = True
-        error_messages = []
-        for file_path in saved_files:
-            print(f"DEBUG: Ingesting file: {file_path}")
-            success, message = engine.ingest_pdfs(file_path)
-            if not success:
-                print(f"DEBUG: Ingestion failed for {file_path}: {message}")
-                process_success = False
-                error_messages.append(f"{file_path.name}: {message}")
-            else:
-                print(f"DEBUG: Ingestion success for {file_path}")
-        
-        if process_success:
-            info = engine.get_index_info()
-            return {
-                "status": "success", 
-                "message": f"Uploaded and indexed {len(files)} files",
-                "total_chunks": info.get("total_chunks", 0)
-            }
+        if not uploaded_names:
+             raise HTTPException(status_code=400, detail="No valid PDF files uploaded")
+
+        if background_tasks:
+            background_tasks.add_task(process_upload_background, valid_paths)
         else:
-            return {"status": "error", "message": f"Processing failed: {'; '.join(error_messages)}"}
-            
+            process_upload_background(valid_paths)
+        
+        return {
+            "success": True, 
+            "message": f"Uploaded {len(uploaded_names)} files. Indexing in background.",
+            "filenames": uploaded_names
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/ingest")
-def ingest(pdf_dir: Optional[str] = None):
+def process_upload_background(file_paths: List[Path]):
+    for path in file_paths:
+        try:
+            search_engine.ingest_pdfs(path)
+        except Exception as e:
+            print(f"Error indexing {path.name}: {e}")
+
+# --- History Endpoints ---
+
+@app.get("/api/history")
+async def get_history():
     try:
-        # Initialize if not already done
-        engine.initialize()
-        
-        pdf_path = Path(pdf_dir) if pdf_dir else Config.PDF_DIR
-        success = engine.ingest_pdfs(pdf_path)
-        
-        if success:
-            return {"status": "success", "message": "Ingestion completed"}
-        else:
-            return {"status": "error", "message": "Ingestion failed"}
+        memory = MemoryManager()
+        return {"success": True, "history": memory.memory}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/reset")
-def reset():
-    if engine.reset_index():
-        return {"status": "success", "message": "Index reset"}
-    else:
-        return {"status": "error", "message": "Reset failed"}
+@app.delete("/api/history")
+async def clear_history():
+    try:
+        memory = MemoryManager()
+        memory.clear_history()
+        return {"success": True, "message": "History cleared"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-# In production, serve React static files
-app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend")
+@app.delete("/api/history/{interaction_id}")
+async def delete_history_item(interaction_id: str):
+    try:
+        memory = MemoryManager()
+        if memory.delete_interaction(interaction_id):
+            return {"success": True, "message": "Interaction deleted"}
+        raise HTTPException(status_code=404, detail="Interaction not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/history/{interaction_id}")
+async def rename_history_item(interaction_id: str, request: RenameRequest):
+    try:
+        memory = MemoryManager()
+        if memory.update_interaction(interaction_id, request.title):
+            return {"success": True, "message": "Interaction renamed"}
+        raise HTTPException(status_code=404, detail="Interaction not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Fallback to serve static frontend files in production
+if os.path.exists("frontend/dist"):
+    app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
