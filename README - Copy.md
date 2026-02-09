@@ -202,8 +202,6 @@ The output binary name depends on the SIMD flag used during compilation:
 * `ndd-neon` (or `ndd-neon-darwin` for mac)
 * `ndd-sve2`
 
-A symlink called `ndd` links to the binary compiled for the current build.
-
 ### Runtime Environment Variables
 
 Some environment variables **ndd** reads at runtime:
@@ -218,7 +216,7 @@ Some environment variables **ndd** reads at runtime:
 **Open Mode (No Authentication)** - Default when `NDD_AUTH_TOKEN` is not set:
 ```bash
 # All APIs work without authentication
-./build/ndd
+./build/ndd-avx2
 curl http://{{BASE_URL}}/api/v1/index/list
 ```
 
@@ -226,7 +224,7 @@ curl http://{{BASE_URL}}/api/v1/index/list
 ```bash
 # Generate a secure token
 export NDD_AUTH_TOKEN=$(openssl rand -hex 32)
-./build/ndd
+./build/ndd-avx2
 
 # All protected APIs require the token in Authorization header
 curl -H "Authorization: $NDD_AUTH_TOKEN" http://{{BASE_URL}}/api/v1/index/list
@@ -242,13 +240,13 @@ mkdir -p ./data
 
 # 2. Export the environment variable and run
 export NDD_DATA_DIR=$(pwd)/data
-./build/ndd
+./build/ndd-avx2
 ```
 
 Alternatively, as a single line:
 
 ```bash
-NDD_DATA_DIR=./data ./build/ndd
+NDD_DATA_DIR=./data ./build/ndd-avx2
 ```
 
 ---
