@@ -38,6 +38,11 @@ class Config:
     CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "500"))
     CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "50"))
     
+    # LLM Configuration (OpenRouter)
+    OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+    OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+    LLM_MODEL = os.getenv("LLM_MODEL", "openai/gpt-4o-mini")
+    
     # Paths
     PROJECT_ROOT = Path(__file__).parent
     PDF_DIR = PROJECT_ROOT / "pdfs"
