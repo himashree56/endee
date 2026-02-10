@@ -294,6 +294,17 @@ class SemanticSearchEngine:
                 return json.load(f)
         return None
     
+    def get_available_documents(self) -> List[str]:
+        """Get list of available documents in the index.
+        
+        Returns:
+            List of filenames
+        """
+        info = self.get_index_info()
+        if info and "files" in info:
+            return list(info["files"].keys())
+        return []
+    
     def reset_index(self) -> bool:
         """Delete the collection and reset the index.
         
