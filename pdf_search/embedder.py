@@ -40,7 +40,7 @@ class Embedder:
     def embed_batch(
         self,
         texts: List[str],
-        batch_size: int = 32,
+        batch_size: int = 4, # Reduced from 32 to 4 for Render Free Tier (512MB RAM) safety
         show_progress: bool = True
     ) -> np.ndarray:
         """Generate embeddings for multiple texts."""
