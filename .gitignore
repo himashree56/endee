@@ -18,8 +18,10 @@ data/*
 .vscode/*
 
 # Frontend
-frontend/
-frontend/*
+# (Handled by pdf_search/.gitignore or specific ignores)
+# frontend/
+# frontend/*
+
 
 # DS Store
 .DS_Store
