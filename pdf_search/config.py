@@ -13,7 +13,13 @@ class Config:
     VECTOR_DB_TYPE = os.getenv("VECTOR_DB_TYPE", "endee")  # Default to endee since user has external DB
     
     # Endee Server (Legacy support)
-    ENDEE_URL = os.getenv("ENDEE_URL", "https://endee-1.onrender.com")  # Hardcoded fallback for Render
+    ENDEE_URL = os.getenv("ENDEE_URL")
+    
+    # CRITICAL FIX: Detect if user left the placeholder in Render Dashboard
+    if ENDEE_URL and "your-endee-server" in ENDEE_URL:
+        print(f"WARNING: Detected placeholder URL '{ENDEE_URL}'. Forcing override.")
+        ENDEE_URL = None
+        
     if not ENDEE_URL:
         _raw_host = os.getenv("ENDEE_HOST", "localhost")
         ENDEE_PORT = int(os.getenv("ENDEE_PORT", "8080"))
@@ -31,6 +37,10 @@ class Config:
             
         _clean_host = _clean_host.rstrip("/")
         ENDEE_URL = f"{_scheme}://{_clean_host}:{ENDEE_PORT}"
+
+    # Hardcode override if still localhost/placeholder (for cloud deployment)
+    if "localhost" in ENDEE_URL and os.getenv("RENDER"): 
+        ENDEE_URL = "https://endee-1.onrender.com"
 
     
     # Embedding Model

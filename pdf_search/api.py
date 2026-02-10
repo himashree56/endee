@@ -20,6 +20,15 @@ from config import Config
 
 app = FastAPI(title="EndeeNova PDF Search API", version="1.1.0")
 
+print(f"--- STARTUP CONFIG ---")
+print(f"ENDEE_URL: {Config.ENDEE_URL}")
+print(f"VECTOR_DB_TYPE: {Config.VECTOR_DB_TYPE}")
+if not Config.OPENROUTER_API_KEY:
+    print("WARNING: OPENROUTER_API_KEY is not set! Chat/Summarizer will fail.")
+else:
+    print("OPENROUTER_API_KEY is set.")
+print(f"----------------------")
+
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,

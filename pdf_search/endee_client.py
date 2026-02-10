@@ -39,7 +39,7 @@ class EndeeClient:
                     "space_type": "cosine",
                     "precision": "int8d" # Match server expected: int8d
                 },
-                timeout=30
+                timeout=120
             )
             
             if response.status_code == 200:
@@ -97,7 +97,7 @@ class EndeeClient:
                 f"{self.base_url}/api/v1/index/{self.index_name}/vector/insert",
                 json=data,
                 headers={"Content-Type": "application/json"},
-                timeout=60  # Larger timeout for potentially large insertions
+                timeout=120  # Larger timeout for potentially large insertions
             )
             
             if response.status_code == 200:
@@ -147,7 +147,7 @@ class EndeeClient:
             response = requests.post(
                 f"{self.base_url}/api/v1/index/{self.index_name}/search",
                 json=data,
-                timeout=30 # Increased timeout
+                timeout=120 # Increased timeout
             )
             
             if response.status_code == 200:
