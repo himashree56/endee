@@ -31,8 +31,6 @@ COPY . .
 # Pre-download embedding model (all-MiniLM-L6-v2) to avoid runtime download issues
 RUN python -c "from fastembed import TextEmbedding; TextEmbedding(model_name='all-MiniLM-L6-v2', cache_dir='./model_cache')"
 
-
-
 COPY --from=build-frontend /app_build/frontend/dist ./frontend/dist
 
 EXPOSE 8000
@@ -41,4 +39,10 @@ ENV PORT=8000
 ENV ENDEE_HOST=host.docker.internal
 ENV ENDEE_PORT=8080
 
-CMD ["sh", "-c", "uvicorn api:app --host 0.0.0.0 --port ${PORT}"]
+# Memory Optimizations for 512MB RAM
+ENV OMP_NUM_THREADS=1
+ENV MKL_NUM_THREADS=1
+ENV ONNXRUNTIME_EXECUTION_MODE=SEQUENTIAL
+
+CMD ["sh", "-c", "uvicorn api:app --host 0.0.0.0 --port ${PORT} --workers 1"]
+

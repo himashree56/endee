@@ -243,8 +243,6 @@ async def clear_history():
         return {"success": True, "message": "History cleared"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-<<<<<<< HEAD
-
 @app.delete("/api/history/{interaction_id}")
 async def delete_history_item(interaction_id: str):
     try:
@@ -265,32 +263,6 @@ async def rename_history_item(interaction_id: str, request: RenameRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Fallback to serve static frontend files in production
-=======
-
-@app.delete("/api/history/{interaction_id}")
-async def delete_history_item(interaction_id: str):
-    try:
-        memory = MemoryManager()
-        if memory.delete_interaction(interaction_id):
-            return {"success": True, "message": "Interaction deleted"}
-        raise HTTPException(status_code=404, detail="Interaction not found")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.put("/api/history/{interaction_id}")
-async def rename_history_item(interaction_id: str, request: RenameRequest):
-    try:
-        memory = MemoryManager()
-        if memory.update_interaction(interaction_id, request.title):
-            return {"success": True, "message": "Interaction renamed"}
-        raise HTTPException(status_code=404, detail="Interaction not found")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-# Serve React static files (only if building as a monolith)
-# In Hybrid mode (Vercel + Render), this part is skipped or optional.
->>>>>>> 8d12097 (updated again)
 if os.path.exists("frontend/dist"):
     app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend")
 
