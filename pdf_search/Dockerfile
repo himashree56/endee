@@ -28,6 +28,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+# Pre-download embedding model (all-MiniLM-L6-v2) to avoid runtime download issues
+RUN python -c "from fastembed import TextEmbedding; TextEmbedding(model_name='all-MiniLM-L6-v2', cache_dir='./model_cache')"
+
+
+
 COPY --from=build-frontend /app_build/frontend/dist ./frontend/dist
 
 EXPOSE 8000

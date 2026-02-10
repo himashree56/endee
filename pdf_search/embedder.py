@@ -16,9 +16,16 @@ class Embedder:
         """
         # Default to BAAI/bge-small-en-v1.5 if not specified
         self.model_name = model_name or Config.EMBEDDING_MODEL
+        self.cache_dir = Config.PROJECT_ROOT / "model_cache"
+        self.cache_dir.mkdir(exist_ok=True)
+        
         print(f"Loading embedding model: {self.model_name}")
-        self.model = TextEmbedding(model_name=self.model_name)
+        self.model = TextEmbedding(
+            model_name=self.model_name,
+            cache_dir=str(self.cache_dir)
+        )
         print(f"Model loaded.")
+
     
     def embed_text(self, text: str) -> np.ndarray:
         """Generate embedding for a single text.
