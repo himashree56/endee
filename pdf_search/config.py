@@ -31,7 +31,7 @@ class Config:
 
     
     # Embedding Model
-    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
     EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIM", "384"))
     
     # PDF Processing
