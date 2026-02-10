@@ -224,6 +224,11 @@ def process_upload_background(file_paths: List[Path]):
             search_engine.ingest_pdfs(path)
         except Exception as e:
             print(f"Error indexing {path.name}: {e}")
+            traceback.print_exc()
+            # Also log to file for debugging
+            with open("api_debug.log", "a") as f:
+                f.write(f"Error indexing {path.name}: {str(e)}\n")
+                traceback.print_exc(file=f)
 
 # --- History Endpoints ---
 
