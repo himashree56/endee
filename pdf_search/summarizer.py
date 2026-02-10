@@ -19,11 +19,17 @@ class DocumentSummarizer:
         """Initialize the document summarizer."""
         self.search_engine = SemanticSearchEngine()
         
-        # Initialize LLM with OpenRouter
+        # Initialize LLM with OpenRouter (Using correct params for newer LangChain)
+        api_key = os.getenv("OPENROUTER_API_KEY")
+        base_url = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+        model = os.getenv("LLM_MODEL", "openai/gpt-4o-mini")
+        
+        print(f"Summarizer Config: Model={model}, Base={base_url}")
+        
         self.llm = ChatOpenAI(
-            model=os.getenv("LLM_MODEL", "openai/gpt-4o-mini"),
-            openai_api_key=os.getenv("OPENROUTER_API_KEY"),
-            openai_api_base=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+            model=model,
+            api_key=api_key,
+            base_url=base_url,
             default_headers={
                 "HTTP-Referer": "https://pdf-search.ai",
                 "X-Title": "PDF Document Summarizer"
@@ -31,11 +37,8 @@ class DocumentSummarizer:
         )
     
     def get_available_documents(self) -> List[str]:
-        """Get list of available documents in the index.
-        
-        Returns:
-            List of document filenames
-        """
+        """Get list of available documents in the index."""
+        # Method body is same, just skipped for brevity unless changing
         index_info = self.search_engine.get_index_info()
         if not index_info:
             return []
@@ -44,18 +47,9 @@ class DocumentSummarizer:
         return list(files.keys())
     
     def get_document_chunks(self, filename: str) -> List[Dict[str, Any]]:
-        """Retrieve all chunks for a specific document.
-        
-        Args:
-            filename: Name of the document file
-            
-        Returns:
-            List of chunks with metadata
-        """
-        # Load the chunk store
+        """Retrieve all chunks for a specific document."""
         chunk_store = self.search_engine._load_chunk_store()
         
-        # Filter chunks by filename
         document_chunks = []
         for chunk_id, chunk_data in chunk_store.items():
             if chunk_data.get("file_name") == filename:
@@ -65,22 +59,11 @@ class DocumentSummarizer:
                     "chunk_id": chunk_data.get("chunk_id", "")
                 })
         
-        # Sort by page number
         document_chunks.sort(key=lambda x: x.get("page", 0))
-        
         return document_chunks
     
     def summarize_document(self, filename: str, max_length: str = "medium") -> Dict[str, Any]:
-        """Generate a summary of a document.
-        
-        Args:
-            filename: Name of the document to summarize
-            max_length: Summary length - "short", "medium", or "long"
-            
-        Returns:
-            Dict with summary, metadata, and chunk count
-        """
-        # Get all chunks for the document
+        """Generate a summary of a document."""
         chunks = self.get_document_chunks(filename)
         
         if not chunks:
@@ -93,8 +76,8 @@ class DocumentSummarizer:
         
         # Combine all chunk texts
         full_text = "\n\n".join([chunk["text"] for chunk in chunks])
+        print(f"Summarizing {filename}: {len(chunks)} chunks, {len(full_text)} chars")
         
-        # Determine summary instructions based on length
         length_instructions = {
             "short": "Provide a brief 2-3 sentence summary highlighting the main topic.",
             "medium": "Provide a comprehensive summary in 1-2 paragraphs covering key points and main themes.",
@@ -103,7 +86,6 @@ class DocumentSummarizer:
         
         instruction = length_instructions.get(max_length, length_instructions["medium"])
         
-        # Create summarization prompt
         prompt = ChatPromptTemplate.from_template("""You are a helpful AI assistant that creates clear and accurate document summaries.
 
 Document: {filename}
@@ -115,13 +97,20 @@ Task: {instruction}
 
 Summary:""")
         
-        # Generate summary
-        chain = prompt | self.llm | StrOutputParser()
-        summary = chain.invoke({
-            "filename": filename,
-            "content": full_text[:15000],  # Limit to avoid token limits
-            "instruction": instruction
-        })
+        try:
+            chain = prompt | self.llm | StrOutputParser()
+            summary = chain.invoke({
+                "filename": filename,
+                "content": full_text[:20000],  # Increased limit slightly, typical 8k context might handle 20k chars roughly but safe is 15-20k
+                "instruction": instruction
+            })
+            
+            if not summary:
+                summary = "Error: LLM returned empty response."
+                
+        except Exception as e:
+            print(f"Summarization failed: {e}")
+            summary = f"Error generating summary: {str(e)}"
         
         return {
             "filename": filename,
