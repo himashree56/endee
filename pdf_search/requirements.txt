@@ -13,3 +13,4 @@ python-multipart>=0.0.9
 msgpack>=1.0.7
 fastembed>=0.2.2
 tqdm>=4.66.1
+qdrant-client>=1.7.0

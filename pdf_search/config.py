@@ -9,8 +9,11 @@ load_dotenv()
 class Config:
     """Application configuration."""
     
-    # Endee Server
-    ENDEE_URL = os.getenv("ENDEE_URL")
+    # Vector DB Configuration
+    VECTOR_DB_TYPE = os.getenv("VECTOR_DB_TYPE", "endee")  # Default to endee since user has external DB
+    
+    # Endee Server (Legacy support)
+    ENDEE_URL = os.getenv("ENDEE_URL", "https://endee-1.onrender.com")  # Hardcoded fallback for Render
     if not ENDEE_URL:
         _raw_host = os.getenv("ENDEE_HOST", "localhost")
         ENDEE_PORT = int(os.getenv("ENDEE_PORT", "8080"))

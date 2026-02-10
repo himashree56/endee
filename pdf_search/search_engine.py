@@ -33,7 +33,16 @@ class SemanticSearchEngine:
         self.config = Config
         self.pdf_processor = PDFProcessor()
         self.embedder = Embedder()
-        self.endee_client = EndeeClient()
+        
+        # Select Vector DB based on config
+        if Config.VECTOR_DB_TYPE == "qdrant":
+            print("Using Local Qdrant Vector DB")
+            from local_vector_db import LocalVectorDB
+            self.endee_client = LocalVectorDB()
+        else:
+            print("Using Remote Endee Vector DB")
+            self.endee_client = EndeeClient()
+            
         self.index_file = Config.INDEX_DIR / "document_index.json"
         self.chunk_store_file = Config.INDEX_DIR / "chunk_store.json"
         
