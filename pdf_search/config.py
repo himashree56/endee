@@ -52,7 +52,7 @@ class Config:
     CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "50"))
     
     # LLM Configuration (OpenRouter)
-    OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+    OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
     OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
     LLM_MODEL = os.getenv("LLM_MODEL", "openai/gpt-4o-mini")
     
