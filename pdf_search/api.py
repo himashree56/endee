@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from pathlib import Path
 import os
+from datetime import datetime
 import traceback
 import uvicorn
 
@@ -165,11 +166,26 @@ def summarize(request: SummarizeRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/version")
+def version():
+    return {"version": "1.0.2-debug", "timestamp": str(datetime.now())}
+
 @app.get("/api/documents")
 def list_documents():
     try:
+        # Debugging logging
+        print("Accessing /api/documents...")
+        if search_engine is None:
+            print("ERROR: search_engine is None")
+            raise ValueError("Search engine not initialized")
+            
         docs = search_engine.get_available_documents()
         index_info = search_engine.get_index_info()
+        
+        # Handle None return
+        if index_info is None:
+            index_info = {}
+            
         files = index_info.get("files", {})
         
         doc_list = []
@@ -182,7 +198,9 @@ def list_documents():
             })
         return {"success": True, "documents": doc_list, "total": len(doc_list)}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error in list_documents: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"{str(e)} | Cause: {type(e).__name__}")
 
 @app.post("/api/upload")
 async def upload_files(files: List[UploadFile] = File(...), background_tasks: BackgroundTasks = None):
