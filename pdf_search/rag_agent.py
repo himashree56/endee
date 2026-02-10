@@ -27,7 +27,7 @@ class RAGAgent:
     
     def __init__(self):
         """Initialize the RAG agent."""
-        self.search_engine = SemanticSearchEngine()
+        self.search_engine = SemanticSearchEngine.get_instance()
         
         # Initialize LLM with OpenRouter
         self.llm = ChatOpenAI(

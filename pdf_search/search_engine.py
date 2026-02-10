@@ -10,10 +10,27 @@ from endee_client import EndeeClient
 
 
 class SemanticSearchEngine:
-    """Semantic search engine for PDF documents."""
+    """
+    Semantic Search Engine for PDF documents.
+    Handles ingesting, embedding, and searching.
+    """
+    _instance = None
     
+    @classmethod
+    def get_instance(cls):
+        """Get or create the singleton instance."""
+        if cls._instance is None:
+            print("Initializing SemanticSearchEngine Singleton...")
+            cls._instance = cls()
+        return cls._instance
+
     def __init__(self):
-        """Initialize search engine components."""
+        """Initialize the search engine."""
+        # Ensure only initialized once via get_instance if possible, 
+        # but keep __init__ functional for direct usage if needed (though discouraged).
+        pass  # Real init logic follows...
+        
+        self.config = Config
         self.pdf_processor = PDFProcessor()
         self.embedder = Embedder()
         self.endee_client = EndeeClient()

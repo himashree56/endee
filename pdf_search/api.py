@@ -29,8 +29,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize engines
-search_engine = SemanticSearchEngine()
+# Initialize engines (Lazy loaded)
+search_engine = None
 adaptive_rag_agent = None
 summarizer = None
 
@@ -70,12 +70,14 @@ def health_check():
 
 @app.get("/api/info")
 def get_info():
+    search_engine = SemanticSearchEngine.get_instance()
     info = search_engine.get_index_info()
     return info or {"total_chunks": 0, "files": {}, "message": "No index found"}
 
 @app.post("/api/search")
 def search(request: SearchRequest):
     try:
+        search_engine = SemanticSearchEngine.get_instance()
         results = search_engine.search(
             query=request.query,
             top_k=request.top_k,
@@ -175,10 +177,9 @@ def list_documents():
     try:
         # Debugging logging
         print("Accessing /api/documents...")
-        if search_engine is None:
-            print("ERROR: search_engine is None")
-            raise ValueError("Search engine not initialized")
-            
+        # Lazy load
+        search_engine = SemanticSearchEngine.get_instance()
+        
         docs = search_engine.get_available_documents()
         index_info = search_engine.get_index_info()
         
@@ -237,17 +238,19 @@ async def upload_files(files: List[UploadFile] = File(...), background_tasks: Ba
         raise HTTPException(status_code=500, detail=str(e))
 
 def process_upload_background(file_paths: List[Path]):
+    # Lazy load inside background task
+    search_engine = SemanticSearchEngine.get_instance()
     for path in file_paths:
         try:
             search_engine.ingest_pdfs(path)
         except Exception as e:
             print(f"Error indexing {path.name}: {e}")
             traceback.print_exc()
-            # Also log to file for debugging
-            with open("api_debug.log", "a") as f:
-                f.write(f"Error indexing {path.name}: {str(e)}\n")
-                traceback.print_exc(file=f)
-
+            try:
+                 with open("api_debug.log", "a") as f:
+                    f.write(f"Error indexing {path.name}: {str(e)}\n")
+                    traceback.print_exc(file=f)
+            except: pass
 # --- History Endpoints ---
 
 @app.get("/api/history")

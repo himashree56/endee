@@ -17,7 +17,7 @@ class DocumentSummarizer:
     
     def __init__(self):
         """Initialize the document summarizer."""
-        self.search_engine = SemanticSearchEngine()
+        self.search_engine = SemanticSearchEngine.get_instance()
         
         # Initialize LLM with OpenRouter (Using correct params for newer LangChain)
         api_key = os.getenv("OPENROUTER_API_KEY")
@@ -149,6 +149,7 @@ def summarize(filename: str, length: str = "medium") -> str:
     Returns:
         Summary text
     """
+    # Note: This creates a new summarizer which uses the singleton search engine
     summarizer = DocumentSummarizer()
     result = summarizer.summarize_document(filename, length)
     return result["summary"]

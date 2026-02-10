@@ -44,7 +44,7 @@ class AdaptiveRAGAgent:
     
     def __init__(self):
         """Initialize the adaptive RAG agent."""
-        self.search_engine = SemanticSearchEngine()
+        self.search_engine = SemanticSearchEngine.get_instance()
         self.memory = MemoryManager()
         self.mode = "standard"
         
