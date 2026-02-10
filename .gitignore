@@ -25,3 +25,7 @@ data/*
 
 # DS Store
 .DS_Store
+venv/
+.venv/
+__pycache__/
+*.pyc
