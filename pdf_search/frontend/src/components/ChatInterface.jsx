@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import API_BASE_URL from '../config'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
@@ -44,7 +45,7 @@ function ChatInterface() {
             // Prepare history for API (exclude current message as it is sent in 'question')
             const history = messages.map(m => ({ role: m.role, content: m.content }))
 
-            const response = await fetch('/api/chat', {
+            const response = await fetch(`${API_BASE_URL}/api/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

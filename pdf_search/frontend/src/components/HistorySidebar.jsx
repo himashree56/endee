@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import HistoryDetailModal from './HistoryDetailModal'
+import API_BASE_URL from '../config'
+
 
 function HistorySidebar({ isOpen, onClose }) {
     const [history, setHistory] = useState(null)
@@ -11,7 +13,7 @@ function HistorySidebar({ isOpen, onClose }) {
     const fetchHistory = async () => {
         setLoading(true)
         try {
-            const response = await fetch('/api/history')
+            const response = await fetch(`${API_BASE_URL}/api/history`)
             const data = await response.json()
             if (data.success) {
                 setHistory(data.history)
@@ -32,8 +34,8 @@ function HistorySidebar({ isOpen, onClose }) {
     const handleClearHistory = async () => {
         if (!confirm("Are you sure you want to clear ALL history? This cannot be undone.")) return
         try {
-            const res = await fetch('/api/history', { method: 'DELETE' })
-            if (res.ok) {
+            const response = await fetch(`${API_BASE_URL}/api/history`, { method: 'DELETE' })
+            if (response.ok) {
                 fetchHistory()
             }
         } catch (e) {
@@ -45,7 +47,7 @@ function HistorySidebar({ isOpen, onClose }) {
         e.stopPropagation()
         if (!confirm("Delete this interaction?")) return
         try {
-            const res = await fetch(`/api/history/${id}`, { method: 'DELETE' })
+            const res = await fetch(`${API_BASE_URL}/api/history/${id}`, { method: 'DELETE' })
             if (res.ok) {
                 fetchHistory()
             }
@@ -63,7 +65,7 @@ function HistorySidebar({ isOpen, onClose }) {
     const saveEdit = async (e, id) => {
         e.stopPropagation()
         try {
-            const res = await fetch(`/api/history/${id}`, {
+            const res = await fetch(`${API_BASE_URL}/api/history/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ title: editTitle })

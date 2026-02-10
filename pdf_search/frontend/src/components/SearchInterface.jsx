@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import API_BASE_URL from '../config'
 
 function SearchInterface() {
     const [query, setQuery] = useState('')
@@ -11,7 +12,7 @@ function SearchInterface() {
 
         setLoading(true)
         try {
-            const response = await fetch('/api/search', {
+            const response = await fetch(`${API_BASE_URL}/api/search`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ query, top_k: 5 })

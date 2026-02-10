@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import API_BASE_URL from '../config'
 
 function UploadInterface() {
     const [selectedFiles, setSelectedFiles] = useState([])
@@ -8,7 +9,7 @@ function UploadInterface() {
 
     const fetchStats = async () => {
         try {
-            const response = await fetch('/api/documents')
+            const response = await fetch(`${API_BASE_URL}/api/documents`)
             const data = await response.json()
             if (data.success) {
                 const totalChunks = data.documents.reduce((acc, doc) => acc + (doc.chunks || 0), 0)
@@ -51,7 +52,7 @@ function UploadInterface() {
                 formData.append('files', file)
             })
 
-            const response = await fetch('/api/upload', {
+            const response = await fetch(`${API_BASE_URL}/api/upload`, {
                 method: 'POST',
                 body: formData
             })

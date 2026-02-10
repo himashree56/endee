@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import ReactMarkdown from 'react-markdown'
+import API_BASE_URL from '../config'
 
 function SummarizeInterface() {
     const [documents, setDocuments] = useState([])
@@ -13,8 +15,9 @@ function SummarizeInterface() {
 
     const fetchDocuments = async () => {
         try {
-            const response = await fetch('/api/documents')
+            const response = await fetch(`${API_BASE_URL}/api/documents`)
             const data = await response.json()
+
             if (data.success) {
                 setDocuments(data.documents)
                 if (data.documents.length > 0) {
@@ -32,7 +35,7 @@ function SummarizeInterface() {
 
         setLoading(true)
         try {
-            const response = await fetch('/api/summarize', {
+            const response = await fetch(`${API_BASE_URL}/api/summarize`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ filename: selectedDoc, length })

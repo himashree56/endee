@@ -6,6 +6,7 @@ import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
 import 'katex/dist/katex.min.css'
+import API_BASE_URL from '../config'
 
 function AdaptiveRAGInterface() {
     const [question, setQuestion] = useState('')
@@ -28,7 +29,7 @@ function AdaptiveRAGInterface() {
 
         setLoading(true)
         try {
-            const response = await fetch('/api/adaptive-rag', {
+            const response = await fetch(`${API_BASE_URL}/api/adaptive-rag`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ question, mode })
