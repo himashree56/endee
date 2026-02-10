@@ -1,23 +1,24 @@
-"""Text embedding generation using sentence-transformers."""
+"""Text embedding generation using fastembed (memory efficient)."""
 import numpy as np
 from typing import List, Union
-from sentence_transformers import SentenceTransformer
+from fastembed import TextEmbedding
 from config import Config
 
 
 class Embedder:
-    """Generate embeddings for text using sentence-transformers."""
+    """Generate embeddings for text using fastembed for low memory usage."""
     
     def __init__(self, model_name: str = None):
         """Initialize embedder.
         
         Args:
-            model_name: Name of sentence-transformer model
+            model_name: Name of fastembed model
         """
+        # Default to BAAI/bge-small-en-v1.5 if not specified
         self.model_name = model_name or Config.EMBEDDING_MODEL
         print(f"Loading embedding model: {self.model_name}")
-        self.model = SentenceTransformer(self.model_name)
-        print(f"Model loaded. Embedding dimension: {self.model.get_sentence_embedding_dimension()}")
+        self.model = TextEmbedding(model_name=self.model_name)
+        print(f"Model loaded.")
     
     def embed_text(self, text: str) -> np.ndarray:
         """Generate embedding for a single text.
@@ -28,7 +29,9 @@ class Embedder:
         Returns:
             Embedding vector
         """
-        return self.model.encode(text, convert_to_numpy=True)
+        # fastembed returns an iterator, we need the first result
+        embeddings = list(self.model.embed([text]))
+        return np.array(embeddings[0])
     
     def embed_batch(
         self,
@@ -41,17 +44,13 @@ class Embedder:
         Args:
             texts: List of input texts
             batch_size: Batch size for encoding
-            show_progress: Show progress bar
+            show_progress: Show progress bar (ignored by fastembed as it is fast)
             
         Returns:
             Array of embeddings (N x D)
         """
-        return self.model.encode(
-            texts,
-            batch_size=batch_size,
-            show_progress_bar=show_progress,
-            convert_to_numpy=True
-        )
+        embeddings = list(self.model.embed(texts, batch_size=batch_size))
+        return np.array(embeddings)
     
     def get_dimension(self) -> int:
         """Get embedding dimension.
@@ -59,4 +58,6 @@ class Embedder:
         Returns:
             Embedding dimension
         """
-        return self.model.get_sentence_embedding_dimension()
+        # For BAAI/bge-small-en-v1.5 and all-MiniLM-L6-v2, it's 384
+        # We can detect it from a sample if needed, but usually it's in Config
+        return Config.EMBEDDING_DIM
