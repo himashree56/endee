@@ -138,6 +138,8 @@ def chat(request: ChatRequest):
             "answer": result["answer"],
             "sources": result["sources"]
         }
+        print(f"[API] Chat response sent. Answer length: {len(result['answer'])}")
+        return response
     except Exception as e:
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
@@ -292,6 +294,8 @@ def process_upload_background(file_paths: List[Path]):
 async def get_history():
     try:
         memory = MemoryManager()
+        print(f"[API] get_history: Memory file is {memory.memory_file}")
+        print(f"[API] get_history: Found {len(memory.memory.get('interactions', []))} interactions")
         return {"success": True, "history": memory.memory}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
