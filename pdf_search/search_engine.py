@@ -87,6 +87,12 @@ class SemanticSearchEngine:
         batch = []
         total_ingested = 0
         
+        # Status Tracking
+        from ingestion_status import IngestionStatus
+        status_tracker = IngestionStatus.get_instance()
+        current_file = pdf_source.name if pdf_source else "batch_upload"
+        status_tracker.update_status(current_file, "processing", message="Starting ingestion...", progress=0)
+        
         print(f"Starting ingestion with batch size {BATCH_SIZE}...")
         
         try:
@@ -95,27 +101,34 @@ class SemanticSearchEngine:
                 
                 if len(batch) >= BATCH_SIZE:
                     if not self._process_batch(batch):
+                        status_tracker.update_status(current_file, "failed", message="Batch processing failed")
                         return False, "Batch processing failed (Database Error?)"
                     total_ingested += len(batch)
                     print(f"Processed batch of {len(batch)} chunks (Total: {total_ingested})")
+                    status_tracker.update_status(current_file, "processing", message=f"Processed {total_ingested} chunks", progress=total_ingested)
                     batch = [] # Clear memory
             
             # Process remaining chunks
             if batch:
                 if not self._process_batch(batch):
+                    status_tracker.update_status(current_file, "failed", message="Final batch processing failed")
                     return False, "Final batch processing failed"
                 total_ingested += len(batch)
                 print(f"Processed final batch of {len(batch)} chunks")
+                status_tracker.update_status(current_file, "processing", message=f"Processed {total_ingested} chunks", progress=total_ingested)
             
             if total_ingested == 0:
+                status_tracker.update_status(current_file, "failed", message="No text extracted")
                 return False, "No text extracted from documents."
                 
             print(f"\n[DONE] Ingestion Complete. Total chunks: {total_ingested}\n")
+            status_tracker.update_status(current_file, "completed", message="Ingestion complete", total=total_ingested)
             return True, f"Ingestion successful ({total_ingested} chunks)"
             
         except Exception as e:
             import traceback
             traceback.print_exc()
+            status_tracker.update_status(current_file, "failed", message=str(e))
             return False, f"Ingestion stream failed: {str(e)}"
             
     def _process_batch(self, chunks: List[TextChunk]) -> bool:

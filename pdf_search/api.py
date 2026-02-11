@@ -17,6 +17,7 @@ from summarizer import DocumentSummarizer
 from adaptive_rag_agent import AdaptiveRAGAgent
 from memory_manager import MemoryManager
 from config import Config
+from ingestion_status import IngestionStatus
 
 app = FastAPI(title="EndeeNova PDF Search API", version="1.1.0")
 
@@ -252,6 +253,12 @@ async def upload_files(files: List[UploadFile] = File(...), background_tasks: Ba
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/ingestion/status")
+def get_ingestion_status():
+    status_tracker = IngestionStatus.get_instance()
+    # status_tracker.clear_completed() # Optional: Clear old tasks? Maybe not immediately so UI can see completion.
+    return {"success": True, "status": status_tracker.get_status()}
 
 def process_upload_background(file_paths: List[Path]):
     # Lazy load inside background task

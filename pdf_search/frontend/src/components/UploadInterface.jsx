@@ -39,12 +39,52 @@ function UploadInterface() {
         }
     }
 
+    const [ingestionStatus, setIngestionStatus] = useState(null)
+
+    const pollStatus = async (filenames) => {
+        const interval = setInterval(async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/ingestion/status`)
+                const data = await res.json()
+
+                if (data.success && data.status) {
+                    const statuses = filenames.map(name => data.status[name]).filter(Boolean)
+                    const allCompleted = statuses.every(s => s.status === 'completed' || s.status === 'failed')
+
+                    // Calculate total progress
+                    const totalProgress = statuses.reduce((acc, s) => acc + (s.progress || 0), 0)
+
+                    setIngestionStatus({
+                        active: !allCompleted,
+                        items: statuses
+                    })
+
+                    if (allCompleted) {
+                        clearInterval(interval)
+                        fetchStats()
+                        setIngestionStatus(null)
+                        // Update result message
+                        const allSuccess = statuses.every(s => s.status === 'completed')
+                        if (allSuccess) {
+                            setResult(prev => ({ ...prev, message: "✅ Upload & Ingestion Complete!" }))
+                        } else {
+                            setResult(prev => ({ ...prev, message: "⚠️ Upload complete, but some files failed ingestion." }))
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Polling error:", err)
+            }
+        }, 1000)
+    }
+
     const handleUpload = async (e) => {
         e.preventDefault()
         if (selectedFiles.length === 0) return
 
         setUploading(true)
         setResult(null)
+        setIngestionStatus({ active: true, items: [] })
 
         try {
             const formData = new FormData()
@@ -62,18 +102,21 @@ function UploadInterface() {
             if (data.success) {
                 setResult({
                     success: true,
-                    message: data.message,
+                    message: "Upload successful. Starting ingestion...",
                     filenames: data.filenames
                 })
                 setSelectedFiles([])
-                // Reset file input
                 document.getElementById('file-input').value = null
-                fetchStats() // Refresh stats
+
+                // Start polling
+                pollStatus(data.filenames)
+
             } else {
                 setResult({
                     success: false,
                     message: data.detail || 'Upload failed'
                 })
+                setIngestionStatus(null)
             }
         } catch (error) {
             console.error('Error:', error)
@@ -81,6 +124,7 @@ function UploadInterface() {
                 success: false,
                 message: 'Error uploading files: ' + error.message
             })
+            setIngestionStatus(null)
         } finally {
             setUploading(false)
         }
@@ -124,7 +168,7 @@ function UploadInterface() {
                         accept=".pdf"
                         multiple
                         onChange={handleFileChange}
-                        disabled={uploading}
+                        disabled={uploading || (ingestionStatus && ingestionStatus.active)}
                         style={{
                             width: '100%',
                             padding: '0.75rem',
@@ -157,23 +201,41 @@ function UploadInterface() {
                 <button
                     type="submit"
                     className="btn btn-primary"
-                    disabled={selectedFiles.length === 0 || uploading}
+                    disabled={selectedFiles.length === 0 || uploading || (ingestionStatus && ingestionStatus.active)}
                 >
-                    {uploading ? 'Uploading & Indexing...' : 'Upload & Index'}
+                    {uploading ? 'Uploading...' : (ingestionStatus && ingestionStatus.active ? 'Ingesting...' : 'Upload & Index')}
                 </button>
             </form>
 
-            {uploading && (
-                <div className="loading">
-                    <div className="spinner"></div>
-                    <p>Uploading and indexing PDFs...</p>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                        This may take a moment depending on file sizes
-                    </p>
+            {/* Ingestion Progress UI */}
+            {ingestionStatus && ingestionStatus.active && (
+                <div className="loading" style={{ marginTop: '1rem', textAlign: 'left' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div className="spinner"></div>
+                        <strong>Processing documents...</strong>
+                    </div>
+                    <div style={{ marginTop: '0.5rem' }}>
+                        {ingestionStatus.items.map((item, i) => (
+                            <div key={i} style={{ fontSize: '0.9rem', marginBottom: '5px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>{item.message || 'Processing...'}</span>
+                                    <span>{item.progress} chunks</span>
+                                </div>
+                                <div style={{ width: '100%', background: '#eee', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+                                    <div style={{
+                                        width: item.total ? `${Math.min(100, (item.progress / item.total) * 100)}%` : '50%',
+                                        background: item.status === 'failed' ? 'red' : 'var(--accent-primary)',
+                                        height: '100%',
+                                        transition: 'width 0.5s ease'
+                                    }}></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
-            {result && (
+            {result && !ingestionStatus && (
                 <div style={{ marginTop: '2rem' }}>
                     <div
                         className="result-card"
