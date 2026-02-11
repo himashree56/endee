@@ -10,16 +10,28 @@ function HistorySidebar({ isOpen, onClose, refreshTrigger }) {
     const [editingId, setEditingId] = useState(null)
     const [editTitle, setEditTitle] = useState("")
 
+    const [error, setError] = useState(null)
+
     const fetchHistory = async () => {
+        console.log("[HistorySidebar] Fetching history...")
         setLoading(true)
+        setError(null)
         try {
-            const response = await fetch(`${API_BASE_URL}/api/history`)
+            const url = `${API_BASE_URL}/api/history`
+            console.log(`[HistorySidebar] GET ${url}`)
+            const response = await fetch(url)
             const data = await response.json()
+            console.log("[HistorySidebar] Data received:", data)
+
             if (data.success) {
                 setHistory(data.history)
+            } else {
+                console.error("[HistorySidebar] API returned success: false")
+                setError("API Error: " + (data.message || "Unknown error"))
             }
         } catch (error) {
             console.error("Failed to fetch history", error)
+            setError(error.message)
         } finally {
             setLoading(false)
         }
@@ -138,7 +150,13 @@ function HistorySidebar({ isOpen, onClose, refreshTrigger }) {
 
                 {/* Scrollable Interaction List */}
                 <div className="history-sidebar-content" style={{ flex: 1, overflowY: 'auto', padding: '1rem', minWidth: '300px' }}>
-                    {loading ? (
+                    {error ? (
+                        <div style={{ color: 'red', padding: '1rem', textAlign: 'center' }}>
+                            <p>⚠️ Error loading history</p>
+                            <small>{error}</small>
+                            <button onClick={fetchHistory} style={{ marginTop: '0.5rem' }}>Retry</button>
+                        </div>
+                    ) : loading ? (
                         <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>Loading history...</div>
                     ) : !history || !history.interactions?.length ? (
                         <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>No history found.</div>
