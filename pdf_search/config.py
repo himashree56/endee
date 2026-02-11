@@ -60,6 +60,7 @@ class Config:
     PROJECT_ROOT = Path(__file__).parent
     PDF_DIR = PROJECT_ROOT / "pdfs"
     INDEX_DIR = PROJECT_ROOT / "index"
+    DATA_DIR = PROJECT_ROOT / "data" # New data directory for memory/metadata
     
     # Endee Collection
     COLLECTION_NAME = "pdf_documents"
@@ -69,6 +70,7 @@ class Config:
         """Create necessary directories."""
         cls.PDF_DIR.mkdir(exist_ok=True)
         cls.INDEX_DIR.mkdir(exist_ok=True)
+        cls.DATA_DIR.mkdir(exist_ok=True)
 
 # Create directories on import
 Config.ensure_dirs()

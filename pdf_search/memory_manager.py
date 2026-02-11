@@ -9,12 +9,26 @@ class MemoryManager:
     
     def __init__(self, memory_file: str = "user_memory.json"):
         """Initialize memory manager."""
-        self.memory_file = memory_file
+        from config import Config
+        self.memory_file = Config.DATA_DIR / memory_file
+        print(f"[MemoryManager] Using memory file: {self.memory_file}")
         self.memory = self._load_memory()
         
     def _load_memory(self) -> Dict[str, Any]:
         """Load memory from file and migrate if needed."""
-        if os.path.exists(self.memory_file):
+        # Migration: Check if old file exists in CWD and move it
+        if not self.memory_file.exists() and os.path.exists("user_memory.json"):
+            print("[MemoryManager] Migrating old user_memory.json to data dir...")
+            try:
+                with open("user_memory.json", "r") as f:
+                    old_data = json.load(f)
+                with open(self.memory_file, "w") as f:
+                    json.dump(old_data, f, indent=2)
+                # optionally delete old file
+            except Exception as e:
+                print(f"Error migrating memory: {e}")
+
+        if self.memory_file.exists():
             try:
                 with open(self.memory_file, 'r') as f:
                     memory = json.load(f)

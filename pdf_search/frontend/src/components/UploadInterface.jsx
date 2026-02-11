@@ -47,6 +47,7 @@ function UploadInterface({ stats, setStats }) {
             try {
                 const res = await fetch(`${API_BASE_URL}/api/ingestion/status`)
                 const data = await res.json()
+                // console.log("Poll data:", data) // Uncomment for debugging
 
                 if (data.success && data.status) {
                     const statuses = filenames.map(name => data.status[name]).filter(Boolean)

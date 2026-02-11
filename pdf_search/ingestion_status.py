@@ -20,6 +20,7 @@ class IngestionStatus:
         return cls._instance
 
     def update_status(self, filename: str, status: str, message: str = None, progress: int = 0, total: int = 0):
+        print(f"[IngestionStatus] Updating {filename}: status={status}, progress={progress}/{total}, msg={message}")
         if filename not in self.status:
             self.status[filename] = {}
             
