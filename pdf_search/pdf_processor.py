@@ -158,30 +158,57 @@ class PDFProcessor:
         
         return chunks
     
-    def process_directory(self, directory: Path = None) -> List[TextChunk]:
-        """Process all PDFs in a directory.
-        
-        Args:
-            directory: Directory containing PDFs (default: Config.PDF_DIR)
+    def yield_text_by_page(self, pdf_path: Path):
+        """Yield text from PDF page by page (generator)."""
+        try:
+            doc = fitz.open(pdf_path)
+            for page_num, page in enumerate(doc, start=1):
+                text = page.get_text()
+                if text.strip():
+                    yield {
+                        "page_num": page_num,
+                        "text": text
+                    }
+            doc.close()
+        except Exception as e:
+            print(f"Error extracting pages from {pdf_path}: {e}")
+
+    def process_pdf_generator(self, pdf_path: Path):
+        """Yield chunks from a PDF (generator)."""
+        chunk_counter = 0
+        for page_data in self.yield_text_by_page(pdf_path):
+            page_num = page_data["page_num"]
+            page_text = page_data["text"]
             
-        Returns:
-            List of all text chunks from all PDFs
-        """
+            page_chunks = self.chunk_text(page_text)
+            
+            for chunk_text in page_chunks:
+                if chunk_text.strip():
+                    yield TextChunk(
+                        text=chunk_text,
+                        page_num=page_num,
+                        chunk_id=chunk_counter,
+                        source_file=pdf_path.name,
+                        metadata={
+                            "file_path": str(pdf_path),
+                            "file_name": pdf_path.name,
+                            "page": page_num,
+                            "chunk_id": chunk_counter
+                        }
+                    )
+                    chunk_counter += 1
+
+    def process_directory_generator(self, directory: Path = None):
+        """Yield chunks from all PDFs in a directory."""
         directory = directory or Config.PDF_DIR
-        all_chunks = []
-        
         pdf_files = list(directory.glob("*.pdf"))
         
         if not pdf_files:
             print(f"No PDF files found in {directory}")
-            return []
+            return
         
         print(f"Found {len(pdf_files)} PDF files")
         
         for pdf_path in pdf_files:
             print(f"Processing: {pdf_path.name}")
-            chunks = self.process_pdf(pdf_path)
-            all_chunks.extend(chunks)
-            print(f"  → Extracted {len(chunks)} chunks")
-        
-        return all_chunks
+            yield from self.process_pdf_generator(pdf_path)

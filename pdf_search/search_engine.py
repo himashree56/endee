@@ -57,7 +57,7 @@ class SemanticSearchEngine:
         return self.endee_client.create_collection(dimension=dimension)
     
     def ingest_pdfs(self, pdf_source: Optional[Path] = None) -> Tuple[bool, str]:
-        """Ingest documents from a directory or a single PDF file.
+        """Ingest documents using streaming and batching to save memory.
         
         Args:
             pdf_source: Directory containing PDFs or path to a single PDF
@@ -68,77 +68,86 @@ class SemanticSearchEngine:
         pdf_source = pdf_source or Config.PDF_DIR
         
         print(f"\n{'='*60}")
-        print("PDF INGESTION PIPELINE")
+        print("PDF INGESTION PIPELINE (STREAMING)")
         print(f"{'='*60}\n")
         
-        # Step 1: Extract text chunks
-        print(f"Step 1: Extracting text from {pdf_source}...")
+        # Step 1: Get Generator
         if pdf_source.is_file():
             if not pdf_source.suffix.lower() == '.pdf':
-                print(f"File {pdf_source} is not a PDF. Skipping.")
                 return False, f"File {pdf_source} is not a PDF"
-            chunks = self.pdf_processor.process_pdf(pdf_source)
+            chunk_generator = self.pdf_processor.process_pdf_generator(pdf_source)
         else:
-            chunks = self.pdf_processor.process_directory(pdf_source)
+            chunk_generator = self.pdf_processor.process_directory_generator(pdf_source)
+            
+        BATCH_SIZE = 50
+        batch = []
+        total_ingested = 0
         
-        if not chunks:
-            print("No chunks extracted. Aborting.")
-            return False, "No chunks extracted. File might be empty or unreadable."
+        print(f"Starting ingestion with batch size {BATCH_SIZE}...")
         
-        print(f"\n[DONE] Extracted {len(chunks)} total chunks from PDFs\n")
-        
-        # Step 2: Generate embeddings
         try:
-            print("Step 2: Generating embeddings...")
+            for chunk in chunk_generator:
+                batch.append(chunk)
+                
+                if len(batch) >= BATCH_SIZE:
+                    if not self._process_batch(batch):
+                        return False, "Batch processing failed (Database Error?)"
+                    total_ingested += len(batch)
+                    print(f"Processed batch of {len(batch)} chunks (Total: {total_ingested})")
+                    batch = [] # Clear memory
+            
+            # Process remaining chunks
+            if batch:
+                if not self._process_batch(batch):
+                    return False, "Final batch processing failed"
+                total_ingested += len(batch)
+                print(f"Processed final batch of {len(batch)} chunks")
+            
+            if total_ingested == 0:
+                return False, "No text extracted from documents."
+                
+            print(f"\n[DONE] Ingestion Complete. Total chunks: {total_ingested}\n")
+            return True, f"Ingestion successful ({total_ingested} chunks)"
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return False, f"Ingestion stream failed: {str(e)}"
+            
+    def _process_batch(self, chunks: List[TextChunk]) -> bool:
+        """Process a single batch of chunks: Embed -> Insert -> Save Local."""
+        try:
+            # 1. Generate Embeddings
             texts = [chunk.text for chunk in chunks]
-            embeddings = self.embedder.embed_batch(texts, show_progress=True)
-            print(f"\n[DONE] Generated {len(embeddings)} embeddings\n")
-        except Exception as e:
-            return False, f"Embedding generation failed: {str(e)}"
-        
-        # Step 3: Prepare metadata
-        print("Step 3: Preparing metadata...")
-        metadata = []
-        for i, chunk in enumerate(chunks):
-            meta = {
-                "text": chunk.text,
-                "file_name": chunk.source_file,
-                "page": chunk.page_num,
-                "chunk_id": chunk.chunk_id,
-                "file_path": chunk.metadata.get("file_path", "")
-            }
-            metadata.append(meta)
-        print(f"[DONE] Prepared metadata for {len(metadata)} chunks\n")
-        
-        # Step 4: Insert into Endee
-        print("Step 4: Inserting into Endee vector database...")
-        # Prepare vector IDs: unique across documents
-        # EndeeClient expects a list of IDs or we provide it in metadata
-        prepared_metadata = []
-        for i, meta in enumerate(metadata):
-            uid = f"{meta['file_name']}_{meta['chunk_id']}"
-            meta['id'] = uid
-            prepared_metadata.append(meta)
+            embeddings = self.embedder.embed_batch(texts, show_progress=False)
             
-        try:
-            success = self.endee_client.insert_vectors(embeddings, prepared_metadata)
-        except Exception as e:
-            return False, f"Endee insertion exception: {str(e)}"
-        
-        if success:
-            print(f"[DONE] Successfully inserted {len(embeddings)} vectors into Endee\n")
+            # 2. Prepare Metadata
+            metadata = []
+            for chunk in chunks:
+                meta = {
+                    "text": chunk.text,
+                    "file_name": chunk.source_file,
+                    "page": chunk.page_num,
+                    "chunk_id": chunk.chunk_id,
+                    "file_path": chunk.metadata.get("file_path", "")
+                }
+                # Create ID
+                meta['id'] = f"{meta['file_name']}_{meta['chunk_id']}"
+                metadata.append(meta)
             
-            # Update index metadata and full chunk store (APPEND instead of overwrite)
+            # 3. Insert into Endee
+            success = self.endee_client.insert_vectors(embeddings, metadata)
+            if not success:
+                return False
+                
+            # 4. Update Local Stores
             self._update_index_metadata(chunks)
             self._update_chunk_store(chunks)
             
-            print(f"{'='*60}")
-            print("INGESTION COMPLETE")
-            print(f"{'='*60}\n")
-            return True, "Ingestion successful"
-        else:
-            print("[ERROR] Failed to insert vectors into Endee\n")
-            return False, "Database insertion failed (Check logs/connection)"
+            return True
+        except Exception as e:
+            print(f"Error processing batch: {e}")
+            return False
 
     def _update_chunk_store(self, new_chunks: List[TextChunk]):
         """Append new chunks to local store.
