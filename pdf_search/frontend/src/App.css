@@ -92,6 +92,32 @@
     font-size: 1.1rem;
 }
 
+.header-controls {
+    position: absolute;
+    top: 2rem;
+    left: 2rem;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .header-controls {
+        position: static;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+
+    .app-header h1 {
+        font-size: 1.8rem;
+    }
+
+    .app-header {
+        padding: 1.5rem 1rem;
+    }
+}
+
 .tab-nav {
     display: flex;
     justify-content: center;
@@ -537,6 +563,40 @@
     border-radius: 20px;
 }
 
+/* History Sidebar Layout */
+.history-sidebar {
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    transition: width 0.3s ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 0;
+}
+
+.history-sidebar.open {
+    width: 300px;
+}
+
+@media (max-width: 768px) {
+    .history-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+        width: 0;
+        height: 100vh;
+    }
+
+    .history-sidebar.open {
+        width: 85%;
+        /* Overlay on mobile */
+        box-shadow: 0 0 0 100vh rgba(0, 0, 0, 0.5);
+        /* Backdrop dimming */
+    }
+}
+
 /* Sidebar History Items */
 .history-item {
     padding: 1rem;
@@ -573,6 +633,7 @@
     color: var(--text-secondary);
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }

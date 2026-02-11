@@ -23,9 +23,10 @@ function UploadInterface() {
         }
     }
 
-    useEffect(() => {
-        fetchStats()
-    }, [])
+    // Session-based stats (reset on reload)
+    // useEffect(() => {
+    //     fetchStats()
+    // }, [])
 
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files).filter(file => file.type === 'application/pdf')
@@ -61,7 +62,16 @@ function UploadInterface() {
 
                     if (allCompleted) {
                         clearInterval(interval)
-                        fetchStats()
+
+                        // Update session stats
+                        const newDocs = statuses.filter(s => s.status === 'completed').length
+                        const newChunks = statuses.reduce((acc, s) => acc + (s.total || 0), 0)
+
+                        setStats(prev => ({
+                            documents: prev.documents + newDocs,
+                            chunks: prev.chunks + newChunks
+                        }))
+
                         setIngestionStatus(null)
                         // Update result message
                         const allSuccess = statuses.every(s => s.status === 'completed')

@@ -35,15 +35,7 @@ function App() {
 
             <div className="app-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', height: '100%' }}>
                 <header className="app-header" style={{ position: 'relative', flexShrink: 0 }}>
-                    <div style={{
-                        position: 'absolute',
-                        top: '2rem',
-                        left: '2rem',
-                        zIndex: 100,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '1rem'
-                    }}>
+                    <div className="header-controls">
                         {!showHistory && (
                             <button
                                 onClick={() => setShowHistory(true)}

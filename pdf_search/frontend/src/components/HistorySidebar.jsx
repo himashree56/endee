@@ -89,15 +89,7 @@ function HistorySidebar({ isOpen, onClose }) {
 
     return (
         <>
-            <div className={`history-sidebar ${isOpen ? 'open' : 'closed'}`} style={{
-                width: isOpen ? '300px' : '0',
-                background: 'var(--bg-secondary)',
-                borderRight: '1px solid var(--border-color)',
-                transition: 'width 0.3s ease',
-                overflow: 'hidden',
-                display: 'flex', flexDirection: 'column',
-                height: '100vh',
-            }}>
+            <div className={`history-sidebar ${isOpen ? 'open' : 'closed'}`}>
                 {/* Navbar Section (Fixed) */}
                 <div style={{ padding: '1.5rem 1rem 1rem 1rem', borderBottom: '1px solid var(--border-color)', minWidth: '300px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
