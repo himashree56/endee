@@ -1,4 +1,4 @@
-# PDF Search - Adaptive RAG System
+# EndeeNova - Your Smart Research Assistant
 
 An intelligent PDF search and analysis system with adaptive reasoning, explainability, and a modern web interface.
 
