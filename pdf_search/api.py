@@ -111,6 +111,19 @@ def search(request: SearchRequest):
                 "score": r.get("score", 0.0)
             })
             
+        # Save to history
+        try:
+            memory = MemoryManager()
+            # Summary of top result for answer
+            top_text = formatted[0]['text'] if formatted else "No results found."
+            memory.add_interaction(
+                question=f"Search: {request.query}",
+                answer=f"Found {len(formatted)} results. Top result: {top_text[:200]}...",
+                sources=[r['file_name'] for r in formatted]
+            )
+        except Exception as e:
+            print(f"Failed to save search history: {e}")
+
         return {
             "success": True,
             "query": request.query,
@@ -138,6 +151,17 @@ def chat(request: ChatRequest):
             "answer": result["answer"],
             "sources": result["sources"]
         }
+        # Save to history
+        try:
+            memory = MemoryManager()
+            memory.add_interaction(
+                question=request.question,
+                answer=result["answer"],
+                sources=result["sources"]
+            )
+        except Exception as e:
+            print(f"Failed to save chat history: {e}")
+
         print(f"[API] Chat response sent. Answer length: {len(result['answer'])}")
         return response
     except Exception as e:
@@ -178,9 +202,31 @@ def summarize(request: SummarizeRequest):
         
         if request.summarize_all:
             summaries = summarizer.summarize_all_documents(max_length=request.length)
+             # Save to history
+            try:
+                memory = MemoryManager()
+                memory.add_interaction(
+                    question="Summarize All Documents",
+                    answer=f"Summarized {len(summaries)} documents.",
+                    sources=[s['filename'] for s in summaries]
+                )
+            except Exception as e:
+                print(f"Failed to save summary history: {e}")
+
             return {"success": True, "summaries": summaries}
         elif request.filename:
             summary = summarizer.summarize_document(request.filename, max_length=request.length)
+             # Save to history
+            try:
+                memory = MemoryManager()
+                memory.add_interaction(
+                    question=f"Summarize {request.filename}",
+                    answer=summary["summary"],
+                    sources=[request.filename]
+                )
+            except Exception as e:
+                print(f"Failed to save summary history: {e}")
+
             return {"success": True, "summary": summary}
         else:
             raise HTTPException(status_code=400, detail="Must specify filename or summarize_all")

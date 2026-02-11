@@ -87,9 +87,9 @@ function App() {
                 </nav>
 
                 <main className="app-main" style={{ flex: 1, overflowY: 'auto', width: '100%' }}>
-                    {activeTab === 'search' && <SearchInterface />}
+                    {activeTab === 'search' && <SearchInterface onInteraction={refreshHistory} />}
                     {activeTab === 'chat' && <ChatInterface onInteraction={refreshHistory} />}
-                    {activeTab === 'summarize' && <SummarizeInterface />}
+                    {activeTab === 'summarize' && <SummarizeInterface onInteraction={refreshHistory} />}
                     {activeTab === 'adaptive-rag' && <AdaptiveRAGInterface onInteraction={refreshHistory} />}
                     {activeTab === 'upload' && <UploadInterface />}
                 </main>

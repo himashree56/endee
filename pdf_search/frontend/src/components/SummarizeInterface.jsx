@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import API_BASE_URL from '../config'
 
-function SummarizeInterface() {
+function SummarizeInterface({ onInteraction }) {
     const [documents, setDocuments] = useState([])
     const [selectedDoc, setSelectedDoc] = useState('')
     const [length, setLength] = useState('medium')
@@ -43,6 +43,9 @@ function SummarizeInterface() {
 
             const data = await response.json()
             setResult(data)
+            if (data.success && onInteraction) {
+                onInteraction()
+            }
         } catch (error) {
             console.error('Error:', error)
             alert('Error: ' + error.message)
@@ -110,7 +113,10 @@ function SummarizeInterface() {
 
                     <div className="result-card" style={{ borderLeftColor: '#4caf50' }}>
                         <h3>📝 Summary</h3>
-                        <p style={{ whiteSpace: 'pre-wrap' }}>{result.summary.summary}</p>
+                        <h3>📝 Summary</h3>
+                        <div className="markdown-content">
+                            <ReactMarkdown>{result.summary.summary}</ReactMarkdown>
+                        </div>
                     </div>
                 </div>
             )}

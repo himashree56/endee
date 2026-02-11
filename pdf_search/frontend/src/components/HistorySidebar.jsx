@@ -13,20 +13,15 @@ function HistorySidebar({ isOpen, onClose, refreshTrigger }) {
     const [error, setError] = useState(null)
 
     const fetchHistory = async () => {
-        console.log("[HistorySidebar] Fetching history...")
         setLoading(true)
         setError(null)
         try {
-            const url = `${API_BASE_URL}/api/history`
-            console.log(`[HistorySidebar] GET ${url}`)
-            const response = await fetch(url)
+            const response = await fetch(`${API_BASE_URL}/api/history`)
             const data = await response.json()
-            console.log("[HistorySidebar] Data received:", data)
 
             if (data.success) {
                 setHistory(data.history)
             } else {
-                console.error("[HistorySidebar] API returned success: false")
                 setError("API Error: " + (data.message || "Unknown error"))
             }
         } catch (error) {

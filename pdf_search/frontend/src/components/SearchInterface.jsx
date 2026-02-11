@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import API_BASE_URL from '../config'
 
-function SearchInterface() {
+function SearchInterface({ onInteraction }) {
     const [query, setQuery] = useState('')
     const [loading, setLoading] = useState(false)
     const [results, setResults] = useState(null)
@@ -20,6 +20,9 @@ function SearchInterface() {
 
             const data = await response.json()
             setResults(data)
+            if (data.success && onInteraction) {
+                onInteraction()
+            }
         } catch (error) {
             console.error('Error:', error)
             alert('Error: ' + error.message)
