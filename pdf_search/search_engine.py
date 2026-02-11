@@ -67,6 +67,10 @@ class SemanticSearchEngine:
         """
         pdf_source = pdf_source or Config.PDF_DIR
         
+        # Ensure collection exists
+        if not self.initialize():
+            return False, "Failed to initialize/create vector collection"
+        
         print(f"\n{'='*60}")
         print("PDF INGESTION PIPELINE (STREAMING)")
         print(f"{'='*60}\n")
