@@ -16,7 +16,10 @@ function App() {
     const [sessionStats, setSessionStats] = useState({ documents: 0, chunks: 0 })
 
     const refreshHistory = () => {
-        setHistoryTrigger(prev => prev + 1)
+        // Add a small delay to allow backend to finish writing to file
+        setTimeout(() => {
+            setHistoryTrigger(prev => prev + 1)
+        }, 500)
     }
 
     useEffect(() => {

@@ -229,7 +229,7 @@ function UploadInterface({ stats, setStats }) {
                             <div key={i} style={{ fontSize: '0.9rem', marginBottom: '5px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                     <span>{item.message || 'Processing...'}</span>
-                                    <span>{item.progress} chunks</span>
+                                    <span style={{ fontWeight: 'bold' }}>{item.progress} chunks processed</span>
                                 </div>
                                 <div style={{ width: '100%', background: '#eee', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
                                     <div style={{
