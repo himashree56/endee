@@ -30,6 +30,13 @@ else:
 print(f"----------------------")
 
 # Enable CORS
+origins = [
+    "http://localhost:5173",  # Local React
+    "http://localhost:3000",  # Local React (alternative)
+    "https://endee.vercel.app", # Vercel Frontend
+]
+
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -251,7 +258,17 @@ def process_upload_background(file_paths: List[Path]):
     search_engine = SemanticSearchEngine.get_instance()
     for path in file_paths:
         try:
-            search_engine.ingest_pdfs(path)
+            success, message = search_engine.ingest_pdfs(path)
+            if not success:
+                error_msg = f"Failed to ingest {path.name}: {message}"
+                print(error_msg, flush=True)
+                try:
+                     with open("api_debug.log", "a") as f:
+                        f.write(f"[{datetime.now()}] ERROR: {error_msg}\n")
+                except: pass
+            else:
+                print(f"Successfully ingested {path.name}", flush=True)
+
         except Exception as e:
             print(f"Error indexing {path.name}: {e}", flush=True)
             import traceback, sys
