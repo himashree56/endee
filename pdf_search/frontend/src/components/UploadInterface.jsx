@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import API_BASE_URL from '../config'
 
-function UploadInterface({ stats, setStats }) {
+function UploadInterface() {
     const [selectedFiles, setSelectedFiles] = useState([])
     const [uploading, setUploading] = useState(false)
     const [result, setResult] = useState(null)
-    // const [stats, setStats] = useState({ documents: 0, chunks: 0 }) // Lifted to App.jsx
+    const [stats, setStats] = useState({ documents: 0, chunks: 0 })
 
     const fetchStats = async () => {
         try {
@@ -23,10 +23,11 @@ function UploadInterface({ stats, setStats }) {
         }
     }
 
-    // Session-based stats (reset on reload)
-    // useEffect(() => {
-    //     fetchStats()
-    // }, [])
+    // Fetch total stats on mount
+    useEffect(() => {
+        fetchStats()
+    }, [])
+
 
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files).filter(file => file.type === 'application/pdf')

@@ -13,7 +13,7 @@ function App() {
     const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light')
     const [showHistory, setShowHistory] = useState(false) // Lifted state
     const [historyTrigger, setHistoryTrigger] = useState(0)
-    const [sessionStats, setSessionStats] = useState({ documents: 0, chunks: 0 })
+
 
     const refreshHistory = () => {
         // Add a small delay to allow backend to finish writing to file
@@ -91,7 +91,7 @@ function App() {
                     {activeTab === 'chat' && <ChatInterface onInteraction={refreshHistory} />}
                     {activeTab === 'summarize' && <SummarizeInterface />}
                     {activeTab === 'adaptive-rag' && <AdaptiveRAGInterface onInteraction={refreshHistory} />}
-                    {activeTab === 'upload' && <UploadInterface stats={sessionStats} setStats={setSessionStats} />}
+                    {activeTab === 'upload' && <UploadInterface />}
                 </main>
 
                 <footer className="app-footer" style={{ flexShrink: 0 }}>
