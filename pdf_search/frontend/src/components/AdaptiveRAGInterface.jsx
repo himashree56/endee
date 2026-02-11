@@ -8,7 +8,7 @@ import 'katex/dist/katex.min.css'
 import 'katex/dist/katex.min.css'
 import API_BASE_URL from '../config'
 
-function AdaptiveRAGInterface() {
+function AdaptiveRAGInterface({ onInteraction }) {
     const [question, setQuestion] = useState('')
     const [mode, setMode] = useState('standard') // 'standard' or 'insight'
     const [loading, setLoading] = useState(false)
@@ -37,6 +37,7 @@ function AdaptiveRAGInterface() {
 
             const data = await response.json()
             setResult(data)
+            if (onInteraction) onInteraction()
         } catch (error) {
             console.error('Error:', error)
             alert('Error: ' + error.message)

@@ -3,7 +3,7 @@ import HistoryDetailModal from './HistoryDetailModal'
 import API_BASE_URL from '../config'
 
 
-function HistorySidebar({ isOpen, onClose }) {
+function HistorySidebar({ isOpen, onClose, refreshTrigger }) {
     const [history, setHistory] = useState(null)
     const [loading, setLoading] = useState(false)
     const [selectedItem, setSelectedItem] = useState(null)
@@ -29,7 +29,7 @@ function HistorySidebar({ isOpen, onClose }) {
         if (isOpen) {
             fetchHistory()
         }
-    }, [isOpen])
+    }, [isOpen, refreshTrigger])
 
     const handleClearHistory = async () => {
         if (!confirm("Are you sure you want to clear ALL history? This cannot be undone.")) return

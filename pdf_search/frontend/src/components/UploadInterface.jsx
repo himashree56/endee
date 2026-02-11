@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import API_BASE_URL from '../config'
 
-function UploadInterface() {
+function UploadInterface({ stats, setStats }) {
     const [selectedFiles, setSelectedFiles] = useState([])
     const [uploading, setUploading] = useState(false)
     const [result, setResult] = useState(null)
-    const [stats, setStats] = useState({ documents: 0, chunks: 0 })
+    // const [stats, setStats] = useState({ documents: 0, chunks: 0 }) // Lifted to App.jsx
 
     const fetchStats = async () => {
         try {

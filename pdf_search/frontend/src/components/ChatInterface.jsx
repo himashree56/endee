@@ -7,7 +7,7 @@ import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
 
-function ChatInterface() {
+function ChatInterface({ onInteraction }) {
     const [messages, setMessages] = useState([
         { role: 'assistant', content: 'Hello! I am your research assistant. Ask me anything about your documents.' }
     ])
@@ -63,6 +63,7 @@ function ChatInterface() {
                     sources: data.sources
                 }
                 setMessages(prev => [...prev, aiMessage])
+                if (onInteraction) onInteraction()
             } else {
                 throw new Error(data.detail || 'Failed to get answer')
             }

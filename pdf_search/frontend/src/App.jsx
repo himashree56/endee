@@ -12,6 +12,12 @@ function App() {
     const [activeTab, setActiveTab] = useState('adaptive-rag')
     const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light')
     const [showHistory, setShowHistory] = useState(false) // Lifted state
+    const [historyTrigger, setHistoryTrigger] = useState(0)
+    const [sessionStats, setSessionStats] = useState({ documents: 0, chunks: 0 })
+
+    const refreshHistory = () => {
+        setHistoryTrigger(prev => prev + 1)
+    }
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme)
@@ -31,6 +37,7 @@ function App() {
             <HistorySidebar
                 isOpen={showHistory}
                 onClose={() => setShowHistory(false)}
+                refreshTrigger={historyTrigger}
             />
 
             <div className="app-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', height: '100%' }}>
@@ -78,10 +85,10 @@ function App() {
 
                 <main className="app-main" style={{ flex: 1, overflowY: 'auto', width: '100%' }}>
                     {activeTab === 'search' && <SearchInterface />}
-                    {activeTab === 'chat' && <ChatInterface />}
+                    {activeTab === 'chat' && <ChatInterface onInteraction={refreshHistory} />}
                     {activeTab === 'summarize' && <SummarizeInterface />}
-                    {activeTab === 'adaptive-rag' && <AdaptiveRAGInterface />}
-                    {activeTab === 'upload' && <UploadInterface />}
+                    {activeTab === 'adaptive-rag' && <AdaptiveRAGInterface onInteraction={refreshHistory} />}
+                    {activeTab === 'upload' && <UploadInterface stats={sessionStats} setStats={setSessionStats} />}
                 </main>
 
                 <footer className="app-footer" style={{ flexShrink: 0 }}>
