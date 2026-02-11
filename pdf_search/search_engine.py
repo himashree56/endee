@@ -239,16 +239,22 @@ class SemanticSearchEngine:
         )
         
         # Hydrate results from local chunk store
+        # Hydrate results from local chunk store
         chunk_store = self._load_chunk_store()
         hydrated_results = []
+        missing_count = 0
         
         for res in results:
             res_id = res["id"]
             if res_id in chunk_store:
                 res["metadata"] = chunk_store[res_id]
+                hydrated_results.append(res)
             else:
-                print(f"Warning: Result ID {res_id} not found in local chunk store")
-            hydrated_results.append(res)
+                missing_count += 1
+                # print(f"Warning: Result ID {res_id} not found in local chunk store")
+        
+        if missing_count > 0:
+            print(f"Warning: {missing_count} search results found in DB but missing locally. Index mismatch.")
             
         return hydrated_results
 
