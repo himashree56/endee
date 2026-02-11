@@ -113,7 +113,7 @@ function SummarizeInterface({ onInteraction }) {
 
                     <div className="result-card" style={{ borderLeftColor: '#4caf50' }}>
                         <h3>📝 Summary</h3>
-                        <h3>📝 Summary</h3>
+
                         <div className="markdown-content">
                             <ReactMarkdown>{result.summary.summary}</ReactMarkdown>
                         </div>
