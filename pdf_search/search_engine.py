@@ -380,3 +380,60 @@ class SemanticSearchEngine:
             print("[DONE] Index reset complete")
         
         return success
+        return success
+
+    def delete_document(self, filename: str) -> bool:
+        """Delete a document from the system completely.
+        
+        Args:
+            filename: Name of the PDF file
+            
+        Returns:
+            True if successful
+        """
+        print(f"Deleting document: {filename}")
+        try:
+            # 1. Delete from Vector DB
+            # Try filter by file_name
+            success = self.endee_client.delete_vectors({"file_name": filename})
+            if not success:
+                print(f"Warning: Failed to delete vectors for {filename} from DB")
+            
+            # 2. Remove from Local Chunk Store
+            store = self._load_chunk_store()
+            # Find keys to delete
+            keys_to_delete = [k for k, v in store.items() if v.get("file_name") == filename]
+            for k in keys_to_delete:
+                del store[k]
+            
+            if keys_to_delete:
+                with open(self.chunk_store_file, 'w') as f:
+                    json.dump(store, f)
+                print(f"Deleted {len(keys_to_delete)} chunks from local store")
+            
+            # 3. Remove from Index Metadata
+            metadata = self.get_index_info()
+            if metadata and "files" in metadata:
+                if filename in metadata["files"]:
+                    chunks_count = metadata["files"][filename]["chunks"]
+                    metadata["total_chunks"] = max(0, metadata["total_chunks"] - chunks_count)
+                    del metadata["files"][filename]
+                    
+                    with open(self.index_file, 'w') as f:
+                        json.dump(metadata, f, indent=2)
+                    print(f"Removed {filename} from index metadata")
+            
+            # 4. Delete Physical File
+            pdf_path = Config.PDF_DIR / filename
+            if pdf_path.exists():
+                pdf_path.unlink()
+                print(f"Deleted file: {pdf_path}")
+            else:
+                print(f"File not found: {pdf_path}")
+                
+            return True
+        except Exception as e:
+            print(f"Error deleting document {filename}: {e}")
+            import traceback
+            traceback.print_exc()
+            return False

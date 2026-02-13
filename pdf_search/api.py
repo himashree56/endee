@@ -302,6 +302,19 @@ async def upload_files(files: List[UploadFile] = File(...), background_tasks: Ba
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.delete("/api/documents/{filename}")
+def delete_document(filename: str):
+    try:
+        search_engine = SemanticSearchEngine.get_instance()
+        success = search_engine.delete_document(filename)
+        if success:
+            return {"success": True, "message": f"Deleted {filename}"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to delete document")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/ingestion/status")
 def get_ingestion_status():
     status_tracker = IngestionStatus.get_instance()

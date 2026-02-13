@@ -5,7 +5,7 @@ function UploadInterface() {
     const [selectedFiles, setSelectedFiles] = useState([])
     const [uploading, setUploading] = useState(false)
     const [result, setResult] = useState(null)
-    const [stats, setStats] = useState({ documents: 0, chunks: 0 })
+    const [documents, setDocuments] = useState([])
 
     const fetchStats = async () => {
         try {
@@ -17,9 +17,31 @@ function UploadInterface() {
                     documents: data.total,
                     chunks: totalChunks
                 })
+                setDocuments(data.documents)
             }
         } catch (error) {
             console.error('Error fetching stats:', error)
+        }
+    }
+
+    const handleDelete = async (filename) => {
+        if (!confirm(`Are you sure you want to delete "${filename}"? This cannot be undone.`)) return
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/documents/${filename}`, {
+                method: 'DELETE'
+            })
+            const data = await response.json()
+
+            if (response.ok) {
+                alert("Document deleted successfully")
+                fetchStats() // Refresh list
+            } else {
+                alert("Failed to delete: " + (data.detail || "Unknown error"))
+            }
+        } catch (error) {
+            console.error("Delete error:", error)
+            alert("Error deleting document")
         }
     }
 
@@ -285,6 +307,56 @@ function UploadInterface() {
                     <li>Text extraction and indexing happens automatically</li>
                     <li>You can search across all uploaded documents</li>
                 </ul>
+            </div>
+
+            {/* Document Management Section */}
+            <div style={{
+                marginTop: '2rem',
+                padding: '1rem',
+                background: 'var(--bg-secondary)',
+                borderRadius: '8px',
+                color: 'var(--text-primary)'
+            }}>
+                <h3 style={{ marginBottom: '1rem' }}>📚 Indexed Documents</h3>
+                {stats.documents === 0 ? (
+                    <p style={{ color: 'var(--text-secondary)' }}>No documents indexed yet.</p>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                        {documents.map((doc, i) => (
+                            <div key={i} style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '0.8rem',
+                                background: 'var(--bg-app)',
+                                borderRadius: '6px',
+                                border: '1px solid var(--border-color)'
+                            }}>
+                                <div>
+                                    <div style={{ fontWeight: 'bold' }}>{doc.filename}</div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                        {doc.chunks} chunks • {doc.pages} pages
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => handleDelete(doc.filename)}
+                                    style={{
+                                        background: '#ffebee',
+                                        color: '#d32f2f',
+                                        border: '1px solid #ffcdd2',
+                                        padding: '0.4rem 0.8rem',
+                                        borderRadius: '4px',
+                                        cursor: 'pointer',
+                                        fontSize: '0.9rem'
+                                    }}
+                                    title="Delete Document"
+                                >
+                                    🗑️ Delete
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     )

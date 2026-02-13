@@ -59,6 +59,26 @@ class LocalVectorDB:
         )
         return True
 
+    def delete_vectors(self, filter_dict: Dict[str, Any]) -> bool:
+        """Delete vectors matching the filter."""
+        from qdrant_client.models import Filter, FieldCondition, MatchValue
+        
+        try:
+            conditions = []
+            for key, val in filter_dict.items():
+                conditions.append(FieldCondition(key=key, match=MatchValue(value=val)))
+            
+            query_filter = Filter(must=conditions)
+            
+            self.client.delete(
+                collection_name=self.collection_name,
+                points_selector=query_filter
+            )
+            return True
+        except Exception as e:
+            print(f"Error deleting from Qdrant: {e}")
+            return False
+
     def search(self, query_vector: np.ndarray, top_k: int = 5, filter_dict: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """Search for similar vectors."""
         from qdrant_client.models import Filter, FieldCondition, MatchValue

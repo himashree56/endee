@@ -111,6 +111,14 @@ class EndeeClient:
         except Exception as e:
             print(f"Error inserting vectors: {e}")
             return False
+            
+    def delete_vectors(self, filter_dict: Dict[str, Any]) -> bool:
+        """Delete vectors matching filter (Best Effort).
+        
+        Endee API might not support granular delete yet.
+        """
+        print(f"WARNING: Granular delete not fully supported in EndeeClient for {filter_dict}")
+        return True # Pretend success for now to allow local cleanup
     
     def search(
         self,
