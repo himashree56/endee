@@ -5,6 +5,7 @@ function UploadInterface() {
     const [selectedFiles, setSelectedFiles] = useState([])
     const [uploading, setUploading] = useState(false)
     const [result, setResult] = useState(null)
+    const [stats, setStats] = useState({ documents: 0, chunks: 0 })
     const [documents, setDocuments] = useState([])
 
     const fetchStats = async () => {
