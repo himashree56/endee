@@ -85,6 +85,7 @@ class SemanticSearchEngine:
             
         BATCH_SIZE = 50
         batch = []
+        pending_chunks = [] # For local store batching
         total_ingested = 0
         
         # Status Tracking
@@ -100,22 +101,34 @@ class SemanticSearchEngine:
                 batch.append(chunk)
                 
                 if len(batch) >= BATCH_SIZE:
-                    if not self._process_batch(batch):
+                    if not self._process_batch(batch, save_local=False):
                         status_tracker.update_status(current_file, "failed", message="Batch processing failed")
                         return False, "Batch processing failed (Database Error?)"
+                        
+                    pending_chunks.extend(batch)
                     total_ingested += len(batch)
                     print(f"Processed batch of {len(batch)} chunks (Total: {total_ingested})")
                     status_tracker.update_status(current_file, "processing", message=f"Processed {total_ingested} chunks", progress=total_ingested)
                     batch = [] # Clear memory
-            
+                    
+                    # Flush to disk every 1000 chunks
+                    if len(pending_chunks) >= 1000:
+                        self._flush_updates_to_disk(pending_chunks)
+                        pending_chunks = []
+
             # Process remaining chunks
             if batch:
-                if not self._process_batch(batch):
+                if not self._process_batch(batch, save_local=False):
                     status_tracker.update_status(current_file, "failed", message="Final batch processing failed")
                     return False, "Final batch processing failed"
+                pending_chunks.extend(batch)
                 total_ingested += len(batch)
                 print(f"Processed final batch of {len(batch)} chunks")
                 status_tracker.update_status(current_file, "processing", message=f"Processed {total_ingested} chunks", progress=total_ingested)
+            
+            # Final flush
+            if pending_chunks:
+                self._flush_updates_to_disk(pending_chunks)
             
             if total_ingested == 0:
                 status_tracker.update_status(current_file, "failed", message="No text extracted")
@@ -131,7 +144,7 @@ class SemanticSearchEngine:
             status_tracker.update_status(current_file, "failed", message=str(e))
             return False, f"Ingestion stream failed: {str(e)}"
             
-    def _process_batch(self, chunks: List[TextChunk]) -> bool:
+    def _process_batch(self, chunks: List[TextChunk], save_local: bool = True) -> bool:
         """Process a single batch of chunks: Embed -> Insert -> Save Local."""
         try:
             # 1. Generate Embeddings
@@ -158,13 +171,23 @@ class SemanticSearchEngine:
                 return False
                 
             # 4. Update Local Stores
-            self._update_index_metadata(chunks)
-            self._update_chunk_store(chunks)
+            if save_local:
+                self._update_index_metadata(chunks)
+                self._update_chunk_store(chunks)
             
             return True
         except Exception as e:
             print(f"Error processing batch: {e}")
             return False
+
+    def _flush_updates_to_disk(self, chunks: List[TextChunk]):
+        """Flush accumulated chunks to local JSON stores."""
+        if not chunks:
+            return
+            
+        print(f"Flushing {len(chunks)} chunks to local storage...")
+        self._update_index_metadata(chunks)
+        self._update_chunk_store(chunks)
 
     def _update_chunk_store(self, new_chunks: List[TextChunk]):
         """Append new chunks to local store.

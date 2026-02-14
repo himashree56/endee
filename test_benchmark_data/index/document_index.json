@@ -1,0 +1,13 @@
+{
+  "total_chunks": 1000,
+  "files": {
+    "benchmark_doc.pdf": {
+      "chunks": 1000,
+      "pages": [
+        1
+      ]
+    }
+  },
+  "embedding_model": "mock_model",
+  "embedding_dimension": 384
+}
